@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 36" role="img" aria-label="1125 Beach Villa">
+  <rect x="2" y="2" width="8" height="28" rx="4" fill="#ffffff" opacity="0.95"/>
+  <rect x="12" y="2" width="8" height="28" rx="4" fill="#ffffff" opacity="0.78"/>
+  <text x="24" y="22" font-family="Georgia, serif" font-size="20" font-weight="700" fill="#ffffff">25</text>
+  <path d="M24 26 C30 23, 34 23, 40 26 C46 29, 50 29, 56 26" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.85"/>
+  <path d="M24 30 C30 27, 34 27, 40 30 C46 33, 50 33, 56 30" stroke="#ffffff" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+</svg>
