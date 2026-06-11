@@ -69,7 +69,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
               <th>Total</th>
               <th>Payment</th>
               <th>Status</th>
-              @if (canManage()) {
+              @if (showActionsColumn()) {
                 <th>Actions</th>
               }
             </tr>
@@ -118,7 +118,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
                 <td>
                   <span class="badge-status" [class]="statusClass(b.status)">{{ statusLabel(b.status) }}</span>
                 </td>
-                @if (canManage()) {
+                @if (showActionsColumn()) {
                   <td class="actions-cell">
                     @if (section() === 'incomplete') {
                       <button
@@ -130,16 +130,14 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
                         Confirm
                       </button>
                     }
-                    @if (section() !== 'cancelled') {
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        [disabled]="actionId() === b.id"
-                        (click)="cancelBooking(b)"
-                      >
-                        Cancel
-                      </button>
-                    }
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      [disabled]="actionId() === b.id"
+                      (click)="cancelBooking(b)"
+                    >
+                      Cancel
+                    </button>
                   </td>
                 }
               </tr>
@@ -220,6 +218,10 @@ export class BookingsComponent implements OnInit {
 
   protected canManage(): boolean {
     return this.auth.user()?.role !== 'SubAdmin';
+  }
+
+  protected showActionsColumn(): boolean {
+    return this.canManage() && this.section() !== 'cancelled';
   }
 
   protected refresh(): void {
