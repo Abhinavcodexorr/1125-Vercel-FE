@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:3002/api/v1',
+  apiBaseUrl: 'https://one125-vercel-be-g0yd.onrender.com/api/v1',
   authLoginPath: '/superadmin/login',
   /** Optional fallback token for development */
   accessToken: '',
