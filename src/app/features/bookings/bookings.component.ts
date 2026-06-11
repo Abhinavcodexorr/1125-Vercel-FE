@@ -31,12 +31,11 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
       <div class="alert alert-error">{{ bookingApi.error() }}</div>
     }
 
-    <div class="filters card">
+    <div class="filter-bar">
       <label for="booking-search">Search</label>
       <input
         id="booking-search"
         type="search"
-        class="search-input"
         placeholder="Guest, email, room, reference…"
         [value]="searchQuery()"
         (input)="onSearchInput($event)"
@@ -44,7 +43,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
       @if (searchQuery()) {
         <button type="button" class="btn btn-ghost btn-sm" (click)="clearSearch()">Clear</button>
       }
-      <span class="result-count">{{ visibleBookings().length }} of {{ sectionBookings().length }}</span>
+      <span class="result-count filter-spacer">{{ visibleBookings().length }} of {{ sectionBookings().length }}</span>
     </div>
 
     @if (bookingApi.loading() && bookingApi.bookings().length === 0) {
@@ -151,50 +150,6 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
     }
   `,
   styles: `
-    .filters {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem;
-      flex-wrap: wrap;
-    }
-
-    .filters label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 220px;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--white);
-      font-size: 0.875rem;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(124, 165, 200, 0.2);
-    }
-
-    .result-count {
-      margin-left: auto;
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    small {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
     .pay-method {
       font-size: 0.75rem;
       font-weight: 600;

@@ -71,6 +71,33 @@ export interface BookingStatistics {
   averageBookingValue: number;
 }
 
+/** GET /booking/calendar item */
+export interface ApiBookingCalendarItem {
+  id: string;
+  bookingReference?: string;
+  title?: string;
+  start: string;
+  end: string;
+  cabin?: {
+    id?: string;
+    name?: string;
+    cabinType?: string;
+  };
+  guest?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    mobileNumber?: string;
+  };
+  adults?: number;
+  children?: number;
+  totalAmount?: number;
+  currency?: string;
+  paymentStatus?: string;
+  status?: string;
+  createdAt?: string;
+}
+
 export interface BookingCalendarEntry {
   id: string;
   bookingReference?: string;
@@ -79,6 +106,44 @@ export interface BookingCalendarEntry {
   status: BookingStatus;
   roomTitle: string;
   guestName: string;
+  guestEmail?: string;
+  guestMobile?: string;
+  adults?: number;
+  children?: number;
+  cabinType?: string;
+  title?: string;
+  paymentStatus?: string;
+  totalAmount?: number;
+  currency?: string;
+}
+
+export function isPaidCalendarBooking(entry: BookingCalendarEntry): boolean {
+  return (entry.paymentStatus ?? '').trim().toLowerCase() === 'paid';
+}
+
+export function mapBookingCalendarEntry(doc: ApiBookingCalendarItem): BookingCalendarEntry {
+  const guestName = `${doc.guest?.firstName ?? ''} ${doc.guest?.lastName ?? ''}`.trim();
+  const titleParts = doc.title?.split(' - ') ?? [];
+  const roomTitle = doc.cabin?.name ?? titleParts[0]?.trim() ?? doc.title ?? 'Booking';
+
+  return {
+    id: doc.id,
+    bookingReference: doc.bookingReference,
+    checkIn: doc.start,
+    checkOut: doc.end,
+    status: normalizeBookingStatus(doc.status),
+    roomTitle,
+    guestName: guestName || titleParts.slice(1).join(' - ').trim() || 'Guest',
+    guestEmail: doc.guest?.email,
+    guestMobile: doc.guest?.mobileNumber,
+    adults: doc.adults,
+    children: doc.children,
+    cabinType: doc.cabin?.cabinType,
+    title: doc.title,
+    paymentStatus: doc.paymentStatus,
+    totalAmount: doc.totalAmount,
+    currency: doc.currency,
+  };
 }
 
 export interface BookingStatusPayload {

@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, tap, throwError } from 'rxjs';
 import {
+  ApiBookingCalendarItem,
   ApiBookingDocument,
   Booking,
   BookingCalendarEntry,
@@ -10,6 +11,7 @@ import {
   BookingStatistics,
   BookingStatusPayload,
   mapApiBooking,
+  mapBookingCalendarEntry,
   mapBookingDashboardStats,
   mapBookingStatistics,
 } from '../models/booking.model';
@@ -45,28 +47,14 @@ export class BookingApiService {
   }
 
   /** GET /booking/calendar */
-  loadCalendar(startDate: string, endDate: string): Observable<BookingCalendarEntry[]> {
-    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
-
+  loadCalendar(): Observable<BookingCalendarEntry[]> {
     return this.http
       .get<unknown>(`${this.api.baseUrl}/booking/calendar`, {
-        params,
         headers: this.api.authHeaders(),
       })
       .pipe(
         map((body) =>
-          unwrapApiList<ApiBookingDocument>(body).map((doc) => {
-            const booking = mapApiBooking(doc);
-            return {
-              id: booking.id,
-              bookingReference: booking.bookingReference,
-              checkIn: booking.checkIn,
-              checkOut: booking.checkOut,
-              status: booking.status,
-              roomTitle: booking.snapshot.roomTitle,
-              guestName: `${booking.guest.firstName} ${booking.guest.lastName}`.trim(),
-            };
-          }),
+          unwrapApiList<ApiBookingCalendarItem>(body).map(mapBookingCalendarEntry),
         ),
         catchError((err) => this.handleError(err)),
       );

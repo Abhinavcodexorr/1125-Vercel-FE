@@ -126,7 +126,7 @@ interface NavItem {
       z-index: 100;
       transition: width var(--transition);
       overflow: hidden;
-      box-shadow: 4px 0 28px rgba(26, 43, 60, 0.1);
+      box-shadow: 4px 0 32px rgba(26, 43, 60, 0.12);
     }
 
     .sidebar::before {
@@ -188,11 +188,22 @@ interface NavItem {
 
     nav {
       flex: 1;
-      padding: 1rem 0.75rem;
+      padding: 1rem 0.75rem 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 0.375rem;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    }
+
+    nav::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
     }
 
     .nav-section {
@@ -232,7 +243,7 @@ interface NavItem {
       color: var(--primary-dark);
       font-weight: 600;
       border-color: rgba(255, 255, 255, 0.65);
-      box-shadow: 0 8px 20px rgba(26, 43, 60, 0.12);
+      box-shadow: 0 6px 18px rgba(26, 43, 60, 0.14);
     }
 
     .nav-link.active .icon-wrap {

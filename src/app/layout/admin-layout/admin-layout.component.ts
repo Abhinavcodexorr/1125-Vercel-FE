@@ -24,7 +24,10 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
     .shell {
       --sidebar-current: var(--sidebar-width);
       min-height: 100vh;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(124, 165, 200, 0.08), transparent 38%),
+        radial-gradient(circle at 0% 100%, rgba(90, 138, 173, 0.06), transparent 32%),
+        var(--bg);
     }
 
     .shell.sidebar-collapsed {
@@ -39,10 +42,17 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
     }
 
     .content {
-      padding: 1.75rem 2.25rem 2.5rem;
+      padding: 1.5rem 1.75rem 2.25rem;
       animation: fadeIn 0.4s ease;
-      max-width: 100%;
+      max-width: var(--content-max-width);
+      margin: 0 auto;
       min-width: 0;
+    }
+
+    @media (min-width: 1280px) {
+      .content {
+        padding: 1.75rem 2.25rem 2.5rem;
+      }
     }
   `,
 })

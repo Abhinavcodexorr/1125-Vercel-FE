@@ -29,14 +29,14 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
       <div class="alert alert-error">{{ roomApi.error() }}</div>
     }
 
-    <div class="filters card">
-      <label>Status</label>
-      <select [value]="statusFilter()" (change)="onStatusFilterChange($event)">
+    <div class="filter-bar">
+      <label for="room-status">Status</label>
+      <select id="room-status" [value]="statusFilter()" (change)="onStatusFilterChange($event)">
         <option value="all">All</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
-      <button type="button" class="btn btn-secondary btn-sm refresh-btn" (click)="refresh()" [disabled]="roomApi.loading()">
+      <button type="button" class="btn btn-secondary btn-sm filter-spacer" (click)="refresh()" [disabled]="roomApi.loading()">
         {{ roomApi.loading() ? 'Loading…' : 'Refresh' }}
       </button>
     </div>
@@ -50,7 +50,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
     } @else {
       <div class="room-grid">
         @for (room of filteredRooms(); track room.id) {
-          <article class="room-card card">
+          <article class="room-card card card-interactive">
             <div class="room-image">
               @if (coverImage(room); as src) {
                 <img [src]="src" [alt]="room.title" loading="lazy" />
@@ -103,31 +103,6 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
     }
   `,
   styles: `
-    .filters {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .filters label {
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .filters select {
-      min-width: 140px;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--white);
-    }
-
-    .refresh-btn {
-      margin-left: auto;
-    }
-
     .room-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
