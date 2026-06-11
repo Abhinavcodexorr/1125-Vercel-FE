@@ -189,3 +189,30 @@ tr:hover td {
   display: flex;
   gap: 0.5rem;
 }
+
+.alert {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+
+.alert-error {
+  background: #fdecec;
+  color: var(--danger);
+  border-color: #f5cfcf;
+}
+
+.alert-success {
+  background: #e6f4ed;
+  color: var(--success);
+  border-color: #b8e0cc;
+}
+
+.alert-info {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: #c5d9eb;
+}

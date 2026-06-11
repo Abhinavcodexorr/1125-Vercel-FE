@@ -1,8 +1,7 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { RoomAvailability, RoomBlockedDate, RoomBlockedDatesData } from '../../core/models/room.model';
+import { forkJoin, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { RoomAvailability, RoomBlockedDate } from '../../core/models/room.model';
 import { RoomApiService } from '../../core/services/room-api.service';
 
 type DayStatus = 'empty' | 'past' | 'available' | 'partial' | 'booked' | 'blocked';
@@ -23,7 +22,7 @@ interface CalendarMonth {
 @Component({
   selector: 'app-room-availability-modal',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [],
   template: `
     <div class="overlay" (click)="closed.emit()">
       <div class="panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
@@ -38,27 +37,26 @@ interface CalendarMonth {
         @if (loading()) {
           <div class="panel-body loading">Loading availability…</div>
         } @else if (error()) {
-          <div class="panel-body error">{{ error() }}</div>
+          <div class="panel-body">
+            <div class="alert alert-error">{{ error() }}</div>
+          </div>
         } @else {
           <div class="panel-body">
             @if (actionError()) {
-              <div class="action-error">{{ actionError() }}</div>
+              <div class="alert alert-error">{{ actionError() }}</div>
             }
 
             @if (availability(); as avail) {
               <div class="summary">
-                <span class="chip">{{ avail.room.quantity ?? avail.summary.quantity ?? 1 }} units</span>
-                <span class="chip">{{ avail.summary.totalBookings }} bookings</span>
-                <span class="chip booked">{{ avail.summary.totalUnavailableDays ?? avail.bookedDates.length }} full</span>
-                <span class="chip partial">{{ avail.summary.totalPartiallyBookedDays ?? avail.partiallyBookedDates?.length ?? 0 }} partial</span>
-                <span class="chip blocked">{{ blockedData()?.blocked?.length ?? 0 }} blocks</span>
-                <span class="chip available">{{ avail.summary.totalAvailableDays }} available</span>
+                <span class="chip">{{ avail.room.quantity ?? 1 }} units</span>
+                <span class="chip booked">{{ avail.bookedDates.length }} booked days</span>
+                <span class="chip blocked">{{ avail.blockedDates?.length ?? 0 }} blocked</span>
+                <span class="chip available">{{ avail.availableDates.length }} available</span>
               </div>
             }
 
             <div class="legend">
               <span><i class="dot available"></i> Available</span>
-              <span><i class="dot partial"></i> Partial</span>
               <span><i class="dot booked"></i> Fully booked</span>
               <span><i class="dot blocked"></i> Blocked</span>
               <span><i class="dot today"></i> Today</span>
@@ -84,18 +82,23 @@ interface CalendarMonth {
                 <div class="week">
                   @for (cell of week; track $index) {
                     @if (cell.key) {
-                      <span
+                      <button
+                        type="button"
                         class="day"
-                        [class.available]="cell.status === 'available'"
-                        [class.partial]="cell.status === 'partial'"
-                        [class.booked]="cell.status === 'booked'"
-                        [class.blocked]="cell.status === 'blocked'"
-                        [class.past]="cell.status === 'past'"
+                        [class.available]="displayStatus(cell) === 'available'"
+                        [class.partial]="displayStatus(cell) === 'partial'"
+                        [class.booked]="displayStatus(cell) === 'booked'"
+                        [class.blocked]="displayStatus(cell) === 'blocked'"
+                        [class.past]="displayStatus(cell) === 'past'"
                         [class.today]="cell.isToday"
-                        [title]="cell.label || cell.key || ''"
+                        [class.selected]="displayStatus(cell) === 'selected'"
+                        [class.clickable]="isDayClickable(cell)"
+                        [disabled]="!isDayClickable(cell)"
+                        [title]="dayTitle(cell)"
+                        (click)="onDayClick(cell)"
                       >
                         {{ cell.label ?? cell.day }}
-                      </span>
+                      </button>
                     } @else {
                       <span class="day empty"></span>
                     }
@@ -104,88 +107,26 @@ interface CalendarMonth {
               }
             </section>
 
-            <section class="block-form">
-              <h3>Block dates</h3>
-              <form [formGroup]="blockForm" (ngSubmit)="submitBlock()">
-                <div formArrayName="ranges">
-                  @for (range of blockRanges.controls; track $index; let i = $index) {
-                    <div class="range-row" [formGroupName]="i">
-                      <div class="form-row">
-                        <div class="field">
-                          <label>Start date</label>
-                          <input type="date" formControlName="startDate" />
-                        </div>
-                        <div class="field">
-                          <label>End date</label>
-                          <input type="date" formControlName="endDate" />
-                        </div>
-                      </div>
-                      <div class="field">
-                        <label>Reason</label>
-                        <input type="text" formControlName="reason" placeholder="Maintenance, private event…" />
-                      </div>
-                      @if (blockRanges.length > 1) {
-                        <button type="button" class="btn btn-ghost btn-sm remove-range" (click)="removeRangeRow(i)">
-                          Remove range
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-                <div class="block-actions">
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="addRangeRow()">+ Add range</button>
-                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="blockForm.invalid || savingBlock()">
-                    {{ savingBlock() ? 'Blocking…' : 'Block dates' }}
-                  </button>
-                </div>
-              </form>
+            <section class="update-section">
+              @if (hasChanges()) {
+                <p class="change-summary">{{ changeSummary() }}</p>
+              } @else {
+                <p class="change-summary muted">No changes yet</p>
+              }
+              <div class="update-actions">
+                @if (hasChanges()) {
+                  <button type="button" class="btn btn-sm" (click)="resetSelection()">Reset</button>
+                }
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="!hasChanges() || saving()"
+                  (click)="updateAvailability()"
+                >
+                  {{ saving() ? 'Updating…' : 'Update availability' }}
+                </button>
+              </div>
             </section>
-
-            @if (blockedData()?.blocked; as blocks) {
-              @if (blocks.length > 0) {
-              <section class="blocks">
-                <h3>Blocked ranges</h3>
-                <ul>
-                  @for (block of blocks; track block._id) {
-                    <li>
-                      <div class="block-info">
-                        <strong>{{ block.startDate | date: 'mediumDate' }} → {{ block.endDate | date: 'mediumDate' }}</strong>
-                        @if (block.reason) {
-                          <span class="reason">{{ block.reason }}</span>
-                        }
-                      </div>
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        [disabled]="removingBlockId() === block._id"
-                        (click)="removeBlock(block)"
-                      >
-                        {{ removingBlockId() === block._id ? 'Removing…' : 'Remove' }}
-                      </button>
-                    </li>
-                  }
-                </ul>
-              </section>
-              }
-            }
-
-            @if (availability()?.booked; as booked) {
-              @if (booked.length > 0) {
-              <section class="bookings">
-                <h3>Bookings</h3>
-                <ul>
-                  @for (booking of booked; track booking.bookingReference) {
-                    <li>
-                      <strong>{{ booking.bookingReference }}</strong>
-                      <span>{{ booking.checkInDate | date: 'mediumDate' }} → {{ booking.checkOutDate | date: 'mediumDate' }}</span>
-                      <span>{{ booking.nights }} nights</span>
-                      <span class="status">{{ booking.status }}</span>
-                    </li>
-                  }
-                </ul>
-              </section>
-              }
-            }
           </div>
         }
       </div>
@@ -257,24 +198,10 @@ interface CalendarMonth {
       padding: 1.25rem 1.5rem 1.5rem;
     }
 
-    .loading,
-    .error {
+    .loading {
       text-align: center;
       color: var(--text-secondary);
       font-size: 0.9375rem;
-    }
-
-    .error,
-    .action-error {
-      color: var(--danger);
-    }
-
-    .action-error {
-      padding: 0.625rem 0.875rem;
-      margin-bottom: 1rem;
-      border-radius: var(--radius-sm);
-      background: #fdecec;
-      font-size: 0.8125rem;
     }
 
     .summary {
@@ -351,13 +278,36 @@ interface CalendarMonth {
     }
 
     .dot.blocked {
-      background: #fef6e6;
-      border: 1px solid var(--warning);
+      background: #ffedd5;
+      border: 1px solid #f97316;
     }
 
     .dot.today {
       background: var(--primary-soft);
       border: 2px solid var(--primary);
+    }
+
+    .update-section {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .change-summary {
+      margin: 0 0 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    .change-summary.muted {
+      color: var(--text-muted);
+    }
+
+    .update-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.5rem;
     }
 
     .calendar {
@@ -426,6 +376,28 @@ interface CalendarMonth {
       border-radius: 6px;
       background: var(--primary-muted);
       color: var(--text-muted);
+      border: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .day.clickable {
+      cursor: pointer;
+    }
+
+    .day.clickable:hover:not(:disabled) {
+      filter: brightness(0.97);
+      transform: scale(1.04);
+    }
+
+    .day:disabled {
+      cursor: default;
+    }
+
+    .day.selected {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      box-shadow: inset 0 0 0 2px var(--primary-dark);
     }
 
     .day.empty {
@@ -449,8 +421,9 @@ interface CalendarMonth {
     }
 
     .day.blocked {
-      background: #fef6e6;
-      color: #b8860b;
+      background: #ffedd5;
+      color: #c2410c;
+      box-shadow: inset 0 0 0 1px #fb923c;
     }
 
     .day.past {
@@ -462,173 +435,74 @@ interface CalendarMonth {
       box-shadow: inset 0 0 0 2px var(--primary);
     }
 
-    .block-form,
-    .blocks,
-    .bookings {
-      margin-top: 1.25rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--border-light);
-    }
-
-    .block-form h3,
-    .blocks h3,
-    .bookings h3 {
-      margin: 0 0 0.75rem;
-      font-size: 0.9375rem;
-      font-weight: 700;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .field {
-      margin-bottom: 0.75rem;
-    }
-
-    .field label {
-      display: block;
-      margin-bottom: 0.35rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .field input {
-      width: 100%;
-      padding: 0.5rem 0.625rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-    }
-
-    .range-row {
-      padding-bottom: 0.75rem;
-      margin-bottom: 0.75rem;
-      border-bottom: 1px dashed var(--border-light);
-    }
-
-    .range-row:last-of-type {
-      border-bottom: none;
-      margin-bottom: 0;
-    }
-
-    .remove-range {
-      margin-bottom: 0.5rem;
-    }
-
-    .block-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-    }
-
-    .blocks ul,
-    .bookings ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.625rem;
-    }
-
-    .blocks li,
-    .bookings li {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-    }
-
-    .block-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      min-width: 0;
-    }
-
-    .block-info strong,
-    .bookings strong {
-      color: var(--text);
-      font-size: 0.875rem;
-    }
-
-    .reason {
-      color: var(--text-muted);
-    }
-
-    .status {
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      background: var(--primary-muted);
-      font-weight: 600;
-    }
   `,
 })
 export class RoomAvailabilityModalComponent implements OnInit {
   private readonly roomApi = inject(RoomApiService);
-  private readonly fb = inject(FormBuilder);
 
   readonly idOrSlug = input.required<string>();
   readonly roomTitle = input.required<string>();
   readonly closed = output<void>();
+  readonly updated = output<void>();
 
   protected readonly weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
-  protected readonly savingBlock = signal(false);
-  protected readonly removingBlockId = signal<string | null>(null);
+  protected readonly saving = signal(false);
   protected readonly availability = signal<RoomAvailability | null>(null);
-  protected readonly blockedData = signal<RoomBlockedDatesData | null>(null);
   protected readonly viewMonth = signal(monthIndex(new Date()));
+  protected readonly selectedDates = signal<Set<string>>(new Set());
 
-  protected readonly blockForm = this.fb.nonNullable.group({
-    ranges: this.fb.nonNullable.array([this.createRangeGroup()]),
+  protected readonly blockedList = computed(() => this.availability()?.blocked ?? []);
+
+  protected readonly hasChanges = computed(() => {
+    const availability = this.availability();
+    if (!availability) return false;
+    const serverBlocked = new Set(availability.blockedDates ?? []);
+    const selected = this.selectedDates();
+    if (serverBlocked.size !== selected.size) return true;
+    for (const date of serverBlocked) {
+      if (!selected.has(date)) return true;
+    }
+    return false;
   });
 
-  protected get blockRanges(): FormArray {
-    return this.blockForm.controls.ranges;
-  }
+  protected readonly changeSummary = computed(() => {
+    const availability = this.availability();
+    if (!availability) return '';
+    const serverBlocked = new Set(availability.blockedDates ?? []);
+    const selected = this.selectedDates();
+    const toBlock = [...selected].filter((date) => !serverBlocked.has(date)).length;
+    const toUnblock = [...serverBlocked].filter((date) => !selected.has(date)).length;
+    const parts: string[] = [];
+    if (toBlock) parts.push(`${toBlock} to block`);
+    if (toUnblock) parts.push(`${toUnblock} to unblock`);
+    return parts.join(', ');
+  });
 
   protected readonly monthBounds = computed(() => {
     const availability = this.availability();
-    const blocked = this.blockedData();
-    if (!availability && !blocked) return { min: monthIndex(new Date()), max: monthIndex(new Date()) };
+    if (!availability) return { min: monthIndex(new Date()), max: monthIndex(new Date()) };
     return getMonthBounds(
-      availability?.bookedDates ?? [],
-      availability?.partiallyBookedDates ?? [],
-      availability?.availableDates ?? [],
-      blocked?.blockedDates ?? [],
+      availability.bookedDates,
+      availability.availableDates,
+      availability.blockedDates ?? [],
     );
   });
 
   protected readonly currentMonth = computed(() => {
     const availability = this.availability();
-    const blocked = this.blockedData();
     const view = this.viewMonth();
     if (!availability) return emptyMonth(view);
     return buildMonth(
       monthFromIndex(view),
       new Set(availability.bookedDates),
-      new Set(availability.partiallyBookedDates ?? []),
-      new Set(blocked?.blockedDates ?? []),
+      new Set(availability.blockedDates ?? []),
       new Set(availability.availableDates),
       availability.occupancyByDate ?? {},
-      availability.room.quantity ?? availability.summary.quantity ?? 1,
+      availability.room.quantity ?? 1,
       startOfDay(new Date()),
       dateKey(startOfDay(new Date())),
     );
@@ -649,120 +523,143 @@ export class RoomAvailabilityModalComponent implements OnInit {
     if (this.canGoNext()) this.viewMonth.update((m) => m + 1);
   }
 
-  submitBlock(): void {
-    if (this.blockForm.invalid || this.savingBlock()) return;
+  protected isDayClickable(cell: CalendarDay): boolean {
+    return cell.status !== 'booked' && cell.status !== 'past' && cell.status !== 'empty';
+  }
 
-    const ranges = this.blockRanges.getRawValue();
-    for (const range of ranges) {
-      if (range.endDate <= range.startDate) {
-        this.actionError.set('End date must be after start date.');
-        return;
-      }
+  protected isDateSelected(key: string | null): boolean {
+    return key != null && this.selectedDates().has(key);
+  }
+
+  protected isServerBlocked(key: string | null): boolean {
+    if (!key) return false;
+    return (this.availability()?.blockedDates ?? []).includes(key);
+  }
+
+  protected displayStatus(cell: CalendarDay): DayStatus | 'selected' {
+    if (!cell.key) return 'empty';
+    if (cell.status === 'booked') return 'booked';
+
+    if (this.isDateSelected(cell.key)) {
+      return this.isServerBlocked(cell.key) ? 'blocked' : 'selected';
     }
 
-    this.savingBlock.set(true);
-    this.actionError.set(null);
-
-    const payload =
-      ranges.length === 1
-        ? {
-            startDate: ranges[0].startDate,
-            endDate: ranges[0].endDate,
-            reason: ranges[0].reason.trim() || undefined,
-          }
-        : {
-            blocks: ranges.map((range) => ({
-              startDate: range.startDate,
-              endDate: range.endDate,
-              reason: range.reason.trim() || undefined,
-            })),
-          };
-
-    this.roomApi.addBlockedDates(this.idOrSlug(), payload).subscribe({
-      next: (result) => {
-        this.blockedData.set({
-          room: result.room,
-          total: result.blocked.length,
-          blocked: result.blocked,
-          blockedDates: result.blockedDates,
-        });
-        this.blockForm.setControl('ranges', this.fb.nonNullable.array([this.createRangeGroup()]));
-        this.savingBlock.set(false);
-        this.refreshAvailability();
-      },
-      error: (err) => {
-        this.actionError.set(extractApiError(err, 'Failed to block dates.'));
-        this.savingBlock.set(false);
-      },
-    });
+    if (this.isServerBlocked(cell.key)) return 'available';
+    return cell.status;
   }
 
-  addRangeRow(): void {
-    this.blockRanges.push(this.createRangeGroup());
-  }
-
-  removeRangeRow(index: number): void {
-    if (this.blockRanges.length > 1) {
-      this.blockRanges.removeAt(index);
+  protected dayTitle(cell: CalendarDay): string {
+    if (!this.isDayClickable(cell)) {
+      if (cell.status === 'booked') return 'Fully booked';
+      return cell.label || cell.key || '';
     }
+    if (this.isDateSelected(cell.key)) {
+      return this.isServerBlocked(cell.key) ? 'Blocked — click to deselect' : 'Selected — click to deselect';
+    }
+    if (this.isServerBlocked(cell.key)) return 'Unselected blocked date — click to keep blocked';
+    return 'Click to select';
   }
 
-  private createRangeGroup() {
-    return this.fb.nonNullable.group({
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required],
-      reason: [''],
+  onDayClick(cell: CalendarDay): void {
+    if (!cell.key || !this.isDayClickable(cell)) return;
+
+    this.selectedDates.update((dates) => {
+      const next = new Set(dates);
+      if (next.has(cell.key!)) next.delete(cell.key!);
+      else next.add(cell.key!);
+      return next;
     });
+    this.actionError.set(null);
   }
 
-  removeBlock(block: RoomBlockedDate): void {
-    if (!confirm('Remove this blocked date range?')) return;
+  resetSelection(): void {
+    this.syncSelectedFromAvailability();
+    this.actionError.set(null);
+  }
 
-    this.removingBlockId.set(block._id);
+  updateAvailability(): void {
+    if (!this.hasChanges() || this.saving()) return;
+
+    const availability = this.availability();
+    if (!availability) return;
+
+    const serverBlocked = new Set(availability.blockedDates ?? []);
+    const selected = this.selectedDates();
+    const toBlock = [...selected].filter((date) => !serverBlocked.has(date)).sort();
+    const toUnblock = [...serverBlocked].filter((date) => !selected.has(date)).sort();
+
+    const removeRequests = toUnblock
+      .map((date) => this.findBlockForDate(date))
+      .filter((block): block is RoomBlockedDate => block != null)
+      .map((block) => this.roomApi.removeBlockedDate(this.idOrSlug(), block._id));
+
+    this.saving.set(true);
     this.actionError.set(null);
 
-    this.roomApi.removeBlockedDate(this.idOrSlug(), block._id).subscribe({
-      next: (result) => {
-        this.blockedData.set({
-          room: result.room,
-          total: result.blocked.length,
-          blocked: result.blocked,
-          blockedDates: result.blockedDates,
-        });
-        this.removingBlockId.set(null);
-        this.refreshAvailability();
-      },
-      error: (err) => {
-        this.actionError.set(extractApiError(err, 'Failed to remove block.'));
-        this.removingBlockId.set(null);
-      },
+    const removes$ = removeRequests.length ? forkJoin(removeRequests) : of([]);
+
+    removes$
+      .pipe(
+        switchMap(() => {
+          if (toBlock.length === 0) return of(null);
+          return this.roomApi.addBlockedDates(this.idOrSlug(), {
+            blocks: toBlock.map((date) => ({ startDate: date, endDate: date })),
+          });
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.updated.emit();
+        },
+        error: (err) => {
+          this.actionError.set(extractApiError(err, 'Failed to update availability.'));
+          this.saving.set(false);
+        },
+      });
+  }
+
+  private findBlockForDate(key: string): RoomBlockedDate | undefined {
+    return this.blockedList().find((block) => {
+      const start = block.startDate.slice(0, 10);
+      const end = (block.endDate ?? block.startDate).slice(0, 10);
+      return key >= start && key <= end;
     });
+  }
+
+  private syncSelectedFromAvailability(): void {
+    const availability = this.availability();
+    if (!availability) {
+      this.selectedDates.set(new Set());
+      return;
+    }
+    this.selectedDates.set(new Set(availability.blockedDates ?? []));
   }
 
   private loadAll(): void {
     this.loading.set(true);
     this.error.set(null);
-
-    forkJoin({
-      availability: this.roomApi.getAvailability(this.idOrSlug()),
-      blocked: this.roomApi.getBlockedDates(this.idOrSlug()),
-    }).subscribe({
-      next: ({ availability, blocked }) => {
-        this.availability.set(availability);
-        this.blockedData.set(blocked);
-        this.viewMonth.set(monthIndex(new Date()));
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(extractApiError(err, 'Failed to load availability.'));
-        this.loading.set(false);
-      },
-    });
+    this.reloadAvailability(true);
   }
 
-  private refreshAvailability(): void {
+  private reloadAvailability(initial = false): void {
     this.roomApi.getAvailability(this.idOrSlug()).subscribe({
-      next: (data) => this.availability.set(data),
+      next: (data) => {
+        this.availability.set(data);
+        this.syncSelectedFromAvailability();
+        if (initial) {
+          this.viewMonth.set(monthIndex(new Date()));
+          this.loading.set(false);
+        }
+      },
+      error: (err) => {
+        if (initial) {
+          this.error.set(extractApiError(err, 'Failed to load availability.'));
+          this.loading.set(false);
+        } else {
+          this.actionError.set(extractApiError(err, 'Failed to refresh availability.'));
+        }
+      },
     });
   }
 }
@@ -777,7 +674,6 @@ function extractApiError(err: unknown, fallback: string): string {
 
 function getMonthBounds(
   bookedDates: string[],
-  partialDates: string[],
   availableDates: string[],
   blockedDates: string[],
 ): { min: number; max: number } {
@@ -785,7 +681,7 @@ function getMonthBounds(
   const current = monthIndex(today);
   let max = monthIndex(addDays(today, 365));
 
-  const allKeys = [...bookedDates, ...partialDates, ...availableDates, ...blockedDates];
+  const allKeys = [...bookedDates, ...availableDates, ...blockedDates];
   if (allKeys.length > 0) {
     const parsed = allKeys.map(parseDateKey);
     const maxDate = parsed.reduce((latest, date) => (date > latest ? date : latest), parsed[0]);
@@ -811,7 +707,6 @@ function emptyMonth(index: number): CalendarMonth {
 function buildMonth(
   monthStart: Date,
   bookedSet: Set<string>,
-  partialSet: Set<string>,
   blockedSet: Set<string>,
   availableSet: Set<string>,
   occupancyByDate: Record<string, { bookedCount: number; availableUnits: number; quantity: number; blocked: boolean }>,
@@ -838,16 +733,11 @@ function buildMonth(
 
     if (blockedSet.has(key) || occupancy?.blocked) {
       status = 'blocked';
-    } else if (bookedSet.has(key)) {
+    } else if (bookedSet.has(key) || (occupancy && occupancy.availableUnits <= 0 && occupancy.bookedCount > 0)) {
       status = 'booked';
-    } else if (partialSet.has(key) || (occupancy && occupancy.bookedCount > 0 && occupancy.availableUnits > 0)) {
-      status = 'partial';
-      const qty = occupancy?.quantity ?? roomQuantity;
-      const available = occupancy?.availableUnits ?? Math.max(qty - (occupancy?.bookedCount ?? 0), 0);
-      label = `${available}/${qty}`;
     } else if (date < today) {
       status = 'past';
-    } else if (availableSet.has(key)) {
+    } else if (availableSet.has(key) || (occupancy && occupancy.availableUnits > 0)) {
       status = 'available';
     } else {
       status = 'past';

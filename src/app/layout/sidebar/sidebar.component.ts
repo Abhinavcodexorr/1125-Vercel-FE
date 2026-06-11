@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { SidebarService } from '../../core/services/sidebar.service';
 
 interface NavChild {
@@ -37,7 +38,7 @@ interface NavItem {
           <p class="nav-section">Main menu</p>
         }
 
-        @for (item of nav; track item.route) {
+        @for (item of nav(); track item.route) {
           @if (item.children && !sidebar.isCollapsed()) {
             <div class="nav-group" [class.group-active]="isGroupActive(item)">
               <div class="nav-group-head">
@@ -88,6 +89,14 @@ interface NavItem {
                     @case ('bookings') {
                       <path d="M8 6h8M8 10h8M8 14h5" stroke-linecap="round" />
                       <rect x="4" y="3" width="16" height="18" rx="2" />
+                    }
+                    @case ('users') {
+                      <circle cx="12" cy="8" r="3.5" />
+                      <path d="M5 19c0-3.5 3-6 7-6s7 2.5 7 6" stroke-linecap="round" />
+                    }
+                    @case ('subscribers') {
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <path d="m3 7 9 6 9-6" stroke-linecap="round" stroke-linejoin="round" />
                     }
                   }
                 </svg>
@@ -345,21 +354,31 @@ interface NavItem {
 export class SidebarComponent {
   protected readonly sidebar = inject(SidebarService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
-  readonly nav: NavItem[] = [
-    { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
-    { label: 'Rooms & Villas', route: '/rooms', icon: 'rooms' },
-    {
-      label: 'Bookings',
-      route: '/bookings',
-      icon: 'bookings',
-      children: [
-        { label: 'Incomplete', route: '/bookings/incomplete' },
-        { label: 'Complete', route: '/bookings/complete' },
-        { label: 'Cancelled', route: '/bookings/cancelled' },
-      ],
-    },
-  ];
+  protected readonly nav = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+      { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
+      { label: 'Rooms & Villas', route: '/rooms', icon: 'rooms' },
+      {
+        label: 'Bookings',
+        route: '/bookings',
+        icon: 'bookings',
+        children: [
+          { label: 'Incomplete', route: '/bookings/incomplete' },
+          { label: 'Complete', route: '/bookings/complete' },
+          { label: 'Cancelled', route: '/bookings/cancelled' },
+        ],
+      },
+      { label: 'Subscribers', route: '/subscribers', icon: 'subscribers' },
+    ];
+
+    if (this.auth.isSuperAdmin()) {
+      items.push({ label: 'Sub-admins', route: '/subadmins', icon: 'users' });
+    }
+
+    return items;
+  });
 
   isGroupActive(item: NavItem): boolean {
     if (!item.children) return false;

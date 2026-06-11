@@ -116,6 +116,17 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
               </div>
 
+              <div class="form-footer">
+                <button
+                  type="button"
+                  class="link-btn"
+                  [disabled]="forgotLoading()"
+                  (click)="forgotPassword()"
+                >
+                  {{ forgotLoading() ? 'Sending…' : 'Forgot password?' }}
+                </button>
+              </div>
+
               <button type="submit" class="btn btn-primary submit-btn" [disabled]="form.invalid || loading()">
                 @if (loading()) {
                   Signing in…
@@ -272,25 +283,6 @@ import { AuthService } from '../../core/services/auth.service';
       font-size: 0.95rem;
     }
 
-    .alert {
-      padding: 0.75rem 0.9rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
-    }
-
-    .alert-error {
-      background: #fdecec;
-      color: var(--danger);
-      border: 1px solid #f5cfcf;
-    }
-
-    .alert-info {
-      background: var(--primary-soft);
-      color: var(--primary-dark);
-      border: 1px solid var(--primary-light);
-    }
-
     .field {
       margin-bottom: 1.1rem;
     }
@@ -346,6 +338,27 @@ import { AuthService } from '../../core/services/auth.service';
       padding: 0.25rem 0.35rem;
     }
 
+    .form-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .link-btn {
+      border: none;
+      background: transparent;
+      color: var(--primary-dark);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .link-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .submit-btn {
       width: 100%;
       margin-top: 0.35rem;
@@ -392,6 +405,7 @@ export class LoginComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly loading = signal(false);
+  protected readonly forgotLoading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
   protected readonly sessionNotice = signal<string | null>(null);
@@ -409,6 +423,29 @@ export class LoginComponent implements OnInit {
     if (this.route.snapshot.queryParamMap.get('reason') === 'session-expired') {
       this.sessionNotice.set('Your session expired. Please sign in again.');
     }
+  }
+
+  forgotPassword(): void {
+    const email = this.form.controls.email.value.trim();
+    if (!email) {
+      this.error.set('Enter your email address first, then click Forgot password.');
+      return;
+    }
+
+    this.forgotLoading.set(true);
+    this.error.set(null);
+    this.sessionNotice.set(null);
+
+    this.auth.forgotPassword({ email }).subscribe({
+      next: (message) => {
+        this.forgotLoading.set(false);
+        this.sessionNotice.set(message);
+      },
+      error: (err: Error) => {
+        this.forgotLoading.set(false);
+        this.error.set(err.message);
+      },
+    });
   }
 
   submit(): void {

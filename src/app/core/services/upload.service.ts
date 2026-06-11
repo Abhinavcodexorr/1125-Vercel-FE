@@ -22,6 +22,26 @@ interface UploadApiBody {
 export class UploadService {
   private readonly http = inject(HttpClient);
 
+  /** POST /upload — generic image upload (no auth) */
+  uploadFiles(files: File[]): Observable<string[]> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+
+    return this.http.post<UploadApiBody>(`${environment.apiBaseUrl}/upload`, formData).pipe(
+      map((body) => {
+        const images = body.data?.images ?? [];
+        if (!images.length) {
+          throw new Error('Upload succeeded but no image URLs were returned.');
+        }
+        return images.map((img) => img.url);
+      }),
+      catchError((err) => {
+        const message = err?.error?.message ?? err?.message ?? 'Failed to upload file(s).';
+        return throwError(() => new Error(message));
+      }),
+    );
+  }
+
   /** POST /upload/room-image — auth added by interceptor */
   uploadRoomImages(files: File[], startOrder = 0): Observable<RoomImage[]> {
     const formData = new FormData();

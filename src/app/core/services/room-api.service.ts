@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, map, tap, throwError } from 'rxjs';
 import {
   AdminRoom,
   ApiRoomDocument,
@@ -47,11 +47,9 @@ export class RoomApiService {
       })
       .pipe(
         map((body) => unwrapApiList<ApiRoomDocument>(body).map(mapApiRoom)),
-        tap((rooms) => {
-          this.roomsSignal.set(rooms);
-          this.loadingSignal.set(false);
-        }),
+        tap((rooms) => this.roomsSignal.set(rooms)),
         catchError((err) => this.handleError(err)),
+        finalize(() => this.loadingSignal.set(false)),
       );
   }
 
@@ -65,6 +63,17 @@ export class RoomApiService {
         map((body) => mapApiRoom(unwrapApiItem<ApiRoomDocument>(body))),
         catchError((err) => this.handleError(err)),
       );
+  }
+
+  /** Refresh one room in the cached list after availability changes */
+  refreshOne(idOrSlug: string): Observable<AdminRoom> {
+    return this.getOne(idOrSlug).pipe(
+      tap((room) =>
+        this.roomsSignal.update((list) =>
+          list.map((r) => (r.id === room.id || r.slug === room.slug ? room : r)),
+        ),
+      ),
+    );
   }
 
   /** POST /rooms */

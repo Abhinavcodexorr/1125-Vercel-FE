@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { SidebarService } from '../../core/services/sidebar.service';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
@@ -45,6 +46,11 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
     }
   `,
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit {
   protected readonly sidebar = inject(SidebarService);
+  private readonly auth = inject(AuthService);
+
+  ngOnInit(): void {
+    this.auth.refreshSession();
+  }
 }

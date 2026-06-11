@@ -57,6 +57,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
       },
+      {
+        path: 'subadmins',
+        loadComponent: () =>
+          import('./features/subadmins/subadmins.component').then((m) => m.SubadminsComponent),
+      },
+      {
+        path: 'subscribers',
+        loadComponent: () =>
+          import('./features/subscribers/subscribers.component').then((m) => m.SubscribersComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

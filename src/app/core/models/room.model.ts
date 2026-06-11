@@ -39,7 +39,7 @@ export interface RoomCreatePayload {
   price: number;
   currency: string;
   guests: number;
-  quantity: number;
+  quantity?: number;
   size: number;
   unit?: string;
   amenities?: RoomAmenity[];
@@ -109,7 +109,12 @@ export function unwrapApiList<T>(body: unknown): T[] {
       if (Array.isArray(nested['data'])) return nested['data'] as T[];
     }
     if (Array.isArray(record['rooms'])) return record['rooms'] as T[];
+    if (Array.isArray(record['bookings'])) return record['bookings'] as T[];
     if (Array.isArray(record['results'])) return record['results'] as T[];
+    if (data && typeof data === 'object') {
+      const nested = data as Record<string, unknown>;
+      if (Array.isArray(nested['bookings'])) return nested['bookings'] as T[];
+    }
   }
   return [];
 }
@@ -166,11 +171,14 @@ export interface RoomAvailability {
     quantity?: number;
   };
   booked: RoomAvailabilityBooking[];
+  blocked?: RoomBlockedDate[];
   bookedDates: string[];
+  bookingBookedDates?: string[];
+  blockedDates?: string[];
   partiallyBookedDates?: string[];
   availableDates: string[];
   occupancyByDate?: Record<string, RoomDateOccupancy>;
-  summary: RoomAvailabilitySummary;
+  summary?: RoomAvailabilitySummary;
 }
 
 export function unwrapApiData<T>(body: unknown): T {

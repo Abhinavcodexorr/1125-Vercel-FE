@@ -2,6 +2,7 @@ export interface BookingGuest {
   firstName: string;
   lastName: string;
   email: string;
+  mobileNumber?: string;
 }
 
 export interface BookingSnapshot {
@@ -11,22 +12,283 @@ export interface BookingSnapshot {
 }
 
 export interface BookingPayment {
-  method: 'card' | 'upi' | 'bank_transfer';
+  method: string;
   amount: number;
-  status: 'pending' | 'captured' | 'failed';
+  status: string;
+  type?: string;
+  transactionId?: string;
+  paymentDate?: string;
 }
+
+export type BookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'cancelled'
+  | 'completed'
+  | 'checked_in'
+  | 'checked_out';
 
 export interface Booking {
   id: string;
+  bookingReference?: string;
+  bookingType?: string;
+  stayName?: string;
   categoryId: string;
   roomId: string;
   guest: BookingGuest;
   snapshot: BookingSnapshot;
   checkIn: string;
   checkOut: string;
+  nights?: number;
+  adults?: number;
+  children?: number;
   numGuests: number;
   grandTotal: number;
+  currency?: string;
   payment: BookingPayment;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: BookingStatus;
   createdAt: string;
+}
+
+export interface BookingDashboardStats {
+  totalBookings: number;
+  totalPayment: number;
+  cancelledBookings: number;
+  totalCabins: number;
+  activeCabins: number;
+  cabinOnlyRevenueTillDate?: number;
+  activityOnlyRevenueTillDate?: number;
+}
+
+export interface BookingStatistics {
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  checkedInBookings: number;
+  checkedOutBookings: number;
+  cancelledBookings: number;
+  totalRevenue: number;
+  averageBookingValue: number;
+}
+
+export interface BookingCalendarEntry {
+  id: string;
+  bookingReference?: string;
+  checkIn: string;
+  checkOut: string;
+  status: BookingStatus;
+  roomTitle: string;
+  guestName: string;
+}
+
+export interface BookingStatusPayload {
+  status: BookingStatus;
+}
+
+/** GET /booking?filter= */
+export type BookingListFilter = 'incomplete' | 'paid' | 'cancelled';
+
+export type BookingSection = 'incomplete' | 'complete' | 'cancelled';
+
+export function sectionToBookingFilter(section: BookingSection): BookingListFilter {
+  switch (section) {
+    case 'complete':
+      return 'paid';
+    case 'cancelled':
+      return 'cancelled';
+    default:
+      return 'incomplete';
+  }
+}
+
+export interface ApiBookingRoom {
+  _id?: string;
+  id?: string;
+  name?: string;
+  title?: string;
+  slug?: string;
+  type?: string;
+  quantity?: number;
+}
+
+export interface ApiBookingGuest {
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  email?: string;
+  mobileNumber?: string;
+  name?: string;
+}
+
+export interface ApiBookingAmounts {
+  subTotal?: number;
+  discount?: number;
+  total?: number;
+  currency?: string;
+}
+
+export interface ApiBookingDocument {
+  _id?: string;
+  id?: string;
+  bookingReference?: string;
+  reference?: string;
+  bookingType?: string;
+  stayName?: string;
+  status?: string;
+  categoryId?: string;
+  roomId?: string;
+  room?: ApiBookingRoom;
+  roomTitle?: string;
+  roomType?: string;
+  categoryName?: string;
+  type?: string;
+  guest?: ApiBookingGuest;
+  guestInfo?: ApiBookingGuest;
+  customer?: ApiBookingGuest;
+  checkInDate?: string;
+  checkIn?: string;
+  checkOutDate?: string;
+  checkOut?: string;
+  nights?: number;
+  adults?: number;
+  children?: number;
+  numberOfGuests?: number;
+  numGuests?: number;
+  guests?: number;
+  amounts?: ApiBookingAmounts;
+  totalAmount?: number;
+  grandTotal?: number;
+  totalPrice?: number;
+  pricePerNight?: number;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  paymentType?: string;
+  paymentDate?: string;
+  transactionId?: string;
+  payment?: {
+    method?: string;
+    status?: string;
+    amount?: number;
+    type?: string;
+    transactionId?: string;
+    paymentDate?: string;
+  };
+  currency?: string;
+  createdAt?: string;
+}
+
+export function normalizeBookingStatus(status?: string): BookingStatus {
+  const value = (status ?? 'pending').trim().toLowerCase().replace(/-/g, '_');
+  switch (value) {
+    case 'confirmed':
+    case 'cancelled':
+    case 'completed':
+    case 'pending':
+    case 'checked_in':
+    case 'checked_out':
+      return value;
+    default:
+      return 'pending';
+  }
+}
+
+function parseGuest(doc: ApiBookingDocument): BookingGuest {
+  const guestSource = doc.guest ?? doc.guestInfo ?? doc.customer;
+  const fullName = guestSource?.fullName?.trim() ?? guestSource?.name?.trim() ?? '';
+  const nameParts = fullName.split(/\s+/).filter(Boolean);
+  const firstName = guestSource?.firstName ?? nameParts[0] ?? 'Guest';
+  const lastName = guestSource?.lastName ?? nameParts.slice(1).join(' ') ?? '';
+
+  return {
+    firstName,
+    lastName,
+    email: guestSource?.email ?? '',
+    mobileNumber: guestSource?.mobileNumber,
+  };
+}
+
+export function mapApiBooking(doc: ApiBookingDocument): Booking {
+  const guest = parseGuest(doc);
+  const room = doc.room;
+  const roomTitle = doc.stayName ?? room?.name ?? room?.title ?? doc.roomTitle ?? 'Room';
+  const categoryName = room?.type ?? doc.roomType ?? doc.categoryName ?? doc.bookingType ?? '—';
+  const amounts = doc.amounts;
+  const paymentStatus = (doc.payment?.status ?? doc.paymentStatus ?? 'pending')
+    .trim()
+    .toLowerCase();
+  const paymentMethod = (doc.payment?.method ?? doc.paymentMethod ?? doc.paymentType ?? '—').trim();
+  const paymentType = (doc.payment?.type ?? doc.paymentType ?? doc.paymentMethod ?? '').trim();
+  const amount =
+    amounts?.total ??
+    doc.grandTotal ??
+    doc.totalAmount ??
+    doc.totalPrice ??
+    doc.payment?.amount ??
+    0;
+  const currency = amounts?.currency ?? doc.currency ?? 'USD';
+  const adults = doc.adults ?? 0;
+  const children = doc.children ?? 0;
+  const numGuests =
+    adults + children > 0
+      ? adults + children
+      : (doc.numberOfGuests ?? doc.numGuests ?? doc.guests ?? 1);
+
+  return {
+    id: doc.id ?? doc._id ?? doc.bookingReference ?? doc.reference ?? '',
+    bookingReference: doc.bookingReference ?? doc.reference,
+    bookingType: doc.bookingType,
+    stayName: doc.stayName ?? roomTitle,
+    categoryId: doc.categoryId ?? '',
+    roomId: doc.roomId ?? room?.id ?? room?._id ?? '',
+    guest,
+    snapshot: {
+      categoryName,
+      roomTitle,
+      pricePerNight: doc.pricePerNight ?? 0,
+    },
+    checkIn: doc.checkInDate ?? doc.checkIn ?? '',
+    checkOut: doc.checkOutDate ?? doc.checkOut ?? '',
+    nights: doc.nights,
+    adults: adults || undefined,
+    children: children || undefined,
+    numGuests,
+    grandTotal: amount,
+    currency,
+    payment: {
+      method: paymentMethod,
+      type: paymentType || undefined,
+      amount,
+      status: paymentStatus,
+      transactionId: doc.transactionId ?? doc.payment?.transactionId,
+      paymentDate: doc.paymentDate ?? doc.payment?.paymentDate,
+    },
+    status: normalizeBookingStatus(doc.status),
+    createdAt: doc.createdAt ?? new Date().toISOString(),
+  };
+}
+
+export function mapBookingDashboardStats(data: Record<string, unknown>): BookingDashboardStats {
+  return {
+    totalBookings: Number(data['totalBookings'] ?? 0),
+    totalPayment: Number(data['totalPayment'] ?? 0),
+    cancelledBookings: Number(data['cancelledBookings'] ?? 0),
+    totalCabins: Number(data['totalCabins'] ?? 0),
+    activeCabins: Number(data['activeCabins'] ?? 0),
+    cabinOnlyRevenueTillDate: Number(data['cabinOnlyRevenueTillDate'] ?? 0),
+    activityOnlyRevenueTillDate: Number(data['activityOnlyRevenueTillDate'] ?? 0),
+  };
+}
+
+export function mapBookingStatistics(data: Record<string, unknown>): BookingStatistics {
+  const breakdown = (data['statusBreakdown'] as Record<string, unknown> | undefined) ?? {};
+  return {
+    totalBookings: Number(data['totalBookings'] ?? breakdown['totalBookings'] ?? 0),
+    pendingBookings: Number(breakdown['pendingBookings'] ?? 0),
+    confirmedBookings: Number(breakdown['confirmedBookings'] ?? 0),
+    checkedInBookings: Number(breakdown['checkedInBookings'] ?? 0),
+    checkedOutBookings: Number(breakdown['checkedOutBookings'] ?? 0),
+    cancelledBookings: Number(breakdown['cancelledBookings'] ?? 0),
+    totalRevenue: Number(breakdown['totalRevenue'] ?? 0),
+    averageBookingValue: Number(breakdown['averageBookingValue'] ?? 0),
+  };
 }

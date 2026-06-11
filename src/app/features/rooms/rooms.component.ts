@@ -26,7 +26,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
     </app-page-header>
 
     @if (roomApi.error()) {
-      <div class="alert-error">{{ roomApi.error() }}</div>
+      <div class="alert alert-error">{{ roomApi.error() }}</div>
     }
 
     <div class="filters card">
@@ -98,6 +98,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
         [idOrSlug]="room.slug || room.id"
         [roomTitle]="room.title"
         (closed)="closeAvailability()"
+        (updated)="onAvailabilityUpdated(room)"
       />
     }
   `,
@@ -125,15 +126,6 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
 
     .refresh-btn {
       margin-left: auto;
-    }
-
-    .alert-error {
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      border-radius: var(--radius-sm);
-      background: #fdecec;
-      color: var(--danger);
-      font-size: 0.875rem;
     }
 
     .room-grid {
@@ -261,5 +253,10 @@ export class RoomsComponent implements OnInit {
 
   closeAvailability(): void {
     this.availabilityRoom.set(null);
+  }
+
+  onAvailabilityUpdated(room: AdminRoom): void {
+    this.closeAvailability();
+    this.roomApi.refreshOne(room.slug || room.id).subscribe();
   }
 }

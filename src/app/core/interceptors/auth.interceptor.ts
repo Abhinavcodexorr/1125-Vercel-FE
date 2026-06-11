@@ -7,10 +7,11 @@ import { AuthService } from '../services/auth.service';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const isApiRequest = req.url.startsWith(environment.apiBaseUrl);
-  const isLoginRequest = req.url.includes(environment.authLoginPath);
+  const isPublicAuthRequest =
+    req.url.includes('/superadmin/login') || req.url.includes('/superadmin/forgot-password');
 
   let outgoing = req;
-  if (isApiRequest && !isLoginRequest) {
+  if (isApiRequest && !isPublicAuthRequest) {
     const token = auth.getToken();
     if (token) {
       outgoing = req.clone({
@@ -24,7 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(outgoing).pipe(
     catchError((err) => {
-      if (err.status === 401 && isApiRequest && !isLoginRequest) {
+      if (err.status === 401 && isApiRequest && !isPublicAuthRequest) {
         auth.handleUnauthorized();
       }
       return throwError(() => err);

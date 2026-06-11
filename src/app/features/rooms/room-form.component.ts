@@ -15,13 +15,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       <app-page-header [title]="isEdit ? 'Edit room' : 'Add room'" />
 
       @if (error()) {
-        <div class="alert-error">{{ error() }}</div>
+        <div class="alert alert-error">{{ error() }}</div>
       }
 
       @if (loading()) {
         <div class="form-shell card"><p>Loading room…</p></div>
       } @else {
-        <form id="room-form" class="form-shell" [formGroup]="form" (ngSubmit)="save()">
+        <form id="room-form" class="form-shell" [formGroup]="form" (ngSubmit)="save()" novalidate>
           <div class="form-grid">
             <section class="panel card details-panel">
             <h2 class="panel-title">Details</h2>
@@ -53,8 +53,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
                 <input type="number" formControlName="guests" min="1" />
               </div>
               <div class="form-group compact field-short">
-                <label>Quantity *</label>
-                <input type="number" formControlName="quantity" min="1" placeholder="1" />
+                <label>Quantity</label>
+                <input type="number" formControlName="quantity" placeholder="1" />
               </div>
               <div class="form-group compact field-price">
                 <label>Price / night *</label>
@@ -126,7 +126,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
             </div>
 
             @if (uploadError()) {
-              <p class="upload-error">{{ uploadError() }}</p>
+              <div class="alert alert-error">{{ uploadError() }}</div>
             }
 
             @if (images().length > 0) {
@@ -174,15 +174,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 
     .form-shell.card {
       padding: 1.25rem;
-    }
-
-    .alert-error {
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      border-radius: var(--radius-sm);
-      background: #fdecec;
-      color: var(--danger);
-      font-size: 0.875rem;
     }
 
     .form-grid {
@@ -382,12 +373,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       display: none;
     }
 
-    .upload-error {
-      margin: 0 0 0.75rem;
-      font-size: 0.8125rem;
-      color: var(--danger);
-    }
-
     .image-strip {
       display: flex;
       flex-wrap: wrap;
@@ -499,9 +484,9 @@ export class RoomFormComponent implements OnInit {
     title: ['', Validators.required],
     description: [''],
     guests: [2, [Validators.required, Validators.min(1)]],
-    quantity: [1, [Validators.required, Validators.min(1)]],
+    quantity: this.fb.control<number | null>(null, Validators.min(1)),
     price: [0, [Validators.required, Validators.min(0)]],
-    size: [0, [Validators.required, Validators.min(1)]],
+    size: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     unit: ['sq ft'],
     currency: ['USD', Validators.required],
     amenitiesText: [''],
@@ -525,9 +510,9 @@ export class RoomFormComponent implements OnInit {
             title: room.title,
             description: room.description,
             guests: room.guests,
-            quantity: room.quantity ?? 1,
+            quantity: room.quantity ?? null,
             price: room.price,
-            size: room.size || 0,
+            size: room.size > 0 ? room.size : null,
             unit: room.unit || 'sq ft',
             currency: room.currency || 'USD',
             amenitiesText: room.amenities.map((a) => a.name).join(', '),
@@ -591,6 +576,7 @@ export class RoomFormComponent implements OnInit {
     this.error.set(null);
 
     const raw = this.form.getRawValue();
+    const title = raw.title.trim();
     const amenities = raw.amenitiesText
       .split(',')
       .map((s) => s.trim())
@@ -606,14 +592,14 @@ export class RoomFormComponent implements OnInit {
       });
 
     const base: RoomCreatePayload | RoomUpdatePayload = {
-      title: raw.title.trim(),
+      title,
       type: raw.type.trim(),
       description: raw.description,
       price: raw.price,
       currency: raw.currency.trim().toUpperCase(),
       guests: raw.guests,
-      quantity: raw.quantity,
-      size: raw.size,
+      quantity: raw.quantity ?? 1,
+      size: raw.size ?? 1,
       unit: raw.unit.trim() || 'sq ft',
       amenities,
       images: this.images(),
@@ -621,7 +607,7 @@ export class RoomFormComponent implements OnInit {
     };
 
     if (!this.isEdit) {
-      base.slug = slugify(raw.title);
+      base.slug = slugify(title);
     }
 
     const request = this.isEdit
