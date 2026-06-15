@@ -435,6 +435,50 @@ interface CalendarMonth {
       box-shadow: inset 0 0 0 2px var(--primary);
     }
 
+    @media (max-width: 640px) {
+      .overlay {
+        padding: 0.75rem;
+        align-items: flex-end;
+      }
+
+      .panel-header,
+      .panel-body {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .calendar {
+        padding: 0.75rem 0.5rem;
+      }
+
+      .weekdays,
+      .week {
+        gap: 2px;
+      }
+
+      .weekdays span {
+        font-size: 0.5625rem;
+      }
+
+      .day {
+        font-size: 0.6875rem;
+        border-radius: 4px;
+      }
+
+      .day.partial {
+        font-size: 0.5625rem;
+      }
+
+      .update-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .update-actions .btn {
+        width: 100%;
+      }
+    }
+
   `,
 })
 export class RoomAvailabilityModalComponent implements OnInit {

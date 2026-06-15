@@ -21,6 +21,7 @@ body {
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -43,6 +44,12 @@ a {
 img {
   max-width: 100%;
   display: block;
+}
+
+app-root {
+  display: block;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 @keyframes fadeIn {

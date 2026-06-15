@@ -84,9 +84,37 @@ import { Component, input, output } from '@angular/core';
     .modal-footer {
       display: flex;
       justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 0.625rem;
       padding: 1rem 1.5rem 1.25rem;
       border-top: 1px solid var(--border-light);
+    }
+
+    @media (max-width: 640px) {
+      .overlay {
+        padding: 0.75rem;
+        align-items: flex-end;
+      }
+
+      .modal {
+        max-height: 92vh;
+      }
+
+      .modal-header,
+      .modal-body,
+      .modal-footer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .modal-footer .btn {
+        width: 100%;
+      }
     }
   `,
 })

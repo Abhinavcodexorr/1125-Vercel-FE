@@ -15,7 +15,6 @@ import { SidebarService } from '../../core/services/sidebar.service';
             <path d="M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
         </button>
-        <span class="topbar-title">Admin panel</span>
       </div>
 
       <div class="topbar-right">
@@ -36,7 +35,7 @@ import { SidebarService } from '../../core/services/sidebar.service';
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
             <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          Logout
+          <span class="logout-label">Logout</span>
         </button>
       </div>
     </header>
@@ -55,7 +54,10 @@ import { SidebarService } from '../../core/services/sidebar.service';
       position: sticky;
       top: 0;
       z-index: 50;
-      gap: 1rem;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
 
     @media (min-width: 1280px) {
@@ -67,23 +69,7 @@ import { SidebarService } from '../../core/services/sidebar.service';
     .topbar-left {
       display: flex;
       align-items: center;
-      gap: 0.875rem;
       flex-shrink: 0;
-      min-width: 0;
-    }
-
-    .topbar-title {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-    }
-
-    @media (max-width: 640px) {
-      .topbar-title {
-        display: none;
-      }
     }
 
     .menu-btn {
@@ -117,8 +103,10 @@ import { SidebarService } from '../../core/services/sidebar.service';
     .topbar-right {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      flex-shrink: 0;
+      gap: 0.5rem;
+      flex-shrink: 1;
+      min-width: 0;
+      margin-left: auto;
     }
 
     .user-chip {
@@ -199,6 +187,29 @@ import { SidebarService } from '../../core/services/sidebar.service';
     .logout-btn svg {
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 0 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 0 0.75rem;
+        gap: 0.5rem;
+      }
+
+      .logout-label {
+        display: none;
+      }
+
+      .logout-btn {
+        padding: 0.5rem;
+        min-width: 40px;
+      }
     }
   `,
 })

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AdminRoom } from '../../core/models/room.model';
 import { itemStatus } from '../../core/models/status.model';
 import { RoomApiService } from '../../core/services/room-api.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
@@ -178,10 +179,24 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
       flex-wrap: wrap;
       gap: 0.5rem;
     }
+
+    @media (max-width: 480px) {
+      .room-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .actions .btn,
+      .actions a.btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 0;
+      }
+    }
   `,
 })
 export class RoomsComponent implements OnInit {
   protected readonly roomApi = inject(RoomApiService);
+  private readonly confirmService = inject(ConfirmService);
   protected readonly itemStatus = itemStatus;
 
   protected readonly statusFilter = signal<'all' | 'active' | 'inactive'>('all');
@@ -208,8 +223,14 @@ export class RoomsComponent implements OnInit {
     this.refresh();
   }
 
-  remove(idOrSlug: string): void {
-    if (confirm('Soft delete this room?')) {
+  async remove(idOrSlug: string): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: 'Delete room',
+      message: 'Soft delete this room? It will be hidden from listings.',
+      confirmLabel: 'Delete room',
+      variant: 'danger',
+    });
+    if (ok) {
       this.roomApi.delete(idOrSlug).subscribe();
     }
   }

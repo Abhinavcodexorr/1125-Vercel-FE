@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { itemStatus } from '../../core/models/status.model';
 import { DataService } from '../../core/services/data.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
@@ -134,10 +135,23 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       flex-wrap: wrap;
       gap: 0.5rem;
     }
+
+    @media (max-width: 480px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .card-actions .btn,
+      .card-actions a.btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 0;
+      }
+    }
   `,
 })
 export class CategoriesComponent {
   protected readonly data = inject(DataService);
+  private readonly confirmService = inject(ConfirmService);
   protected readonly itemStatus = itemStatus;
 
   protected readonly showDeleted = signal(false);
@@ -154,8 +168,14 @@ export class CategoriesComponent {
     this.showDeleted.set((event.target as HTMLInputElement).checked);
   }
 
-  remove(id: string): void {
-    if (confirm('Soft delete this category? Linked rooms will also be marked isDeleted.')) {
+  async remove(id: string): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: 'Delete category',
+      message: 'Soft delete this category? Linked rooms will also be marked as deleted.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (ok) {
       this.data.softDeleteCategory(id);
     }
   }

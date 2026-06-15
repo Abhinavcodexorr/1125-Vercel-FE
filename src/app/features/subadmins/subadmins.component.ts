@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { SubAdmin } from '../../core/models/auth.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
@@ -147,11 +148,23 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 640px) {
+      .panel-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .panel-head .btn {
+        width: 100%;
+      }
+    }
   `,
 })
 export class SubadminsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly subadmins = signal<SubAdmin[]>([]);
   protected readonly loading = signal(false);
@@ -241,8 +254,14 @@ export class SubadminsComponent implements OnInit {
     });
   }
 
-  protected remove(admin: SubAdmin): void {
-    if (!confirm(`Delete sub-admin ${admin.email}?`)) return;
+  protected async remove(admin: SubAdmin): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: 'Delete sub-admin',
+      message: `Delete sub-admin ${admin.email}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     this.actionId.set(admin.id);
     this.auth.deleteSubAdmin(admin.id).subscribe({

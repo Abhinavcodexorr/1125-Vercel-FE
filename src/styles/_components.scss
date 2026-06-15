@@ -191,6 +191,8 @@
 
 .table-wrap {
   overflow: auto;
+  max-width: 100%;
+  width: 100%;
   border-radius: var(--radius);
   border: 1px solid var(--border-light);
   background: var(--white);
@@ -337,4 +339,222 @@ td small {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+  }
+
+  .filter-bar {
+    align-items: stretch;
+  }
+
+  .filter-bar .filter-spacer {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-cell {
+    flex-wrap: wrap;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+    padding: 0.875rem;
+  }
+
+  .filter-bar label {
+    width: 100%;
+  }
+
+  .filter-bar input[type='search'],
+  .filter-bar input[type='text'],
+  .filter-bar select {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .filter-bar > .btn:not(.filter-spacer) {
+    width: 100%;
+  }
+
+  .filter-bar .result-count {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .btn {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .panel-section {
+    padding: 1rem;
+  }
+
+  .table-wrap {
+    border-radius: var(--radius-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  th,
+  td {
+    padding: 0.625rem 0.75rem;
+  }
+}
+
+app-bookings,
+app-rooms,
+app-dashboard,
+app-subadmins,
+app-subscribers,
+app-categories,
+app-category-form,
+app-room-form {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  app-dashboard .stats {
+    grid-template-columns: 1fr;
+  }
+
+  app-dashboard .stat {
+    padding: 1rem 1.125rem;
+  }
+
+  app-dashboard .stat-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.125rem;
+  }
+
+  app-dashboard .stat-value {
+    font-size: 1.375rem;
+  }
+
+  app-dashboard .calendar-panel {
+    padding: 1rem;
+  }
+
+  app-dashboard .calendar-shell {
+    padding: 0.75rem 0.5rem;
+  }
+
+  app-dashboard .calendar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  app-dashboard .month-chip {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+
+  app-dashboard .weekdays,
+  app-dashboard .week {
+    gap: 0.2rem;
+  }
+
+  app-dashboard .weekdays {
+    font-size: 0.5625rem;
+  }
+
+  app-dashboard .day,
+  app-dashboard .day.empty {
+    min-height: 2.1rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    padding: 0.125rem;
+  }
+
+  app-dashboard .month-label {
+    min-width: 0;
+    font-size: 0.9375rem;
+  }
+
+  app-dashboard .legend {
+    gap: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  app-dashboard .overlay {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  app-dashboard .popup {
+    max-height: 85vh;
+  }
+
+  app-dashboard .guest-row {
+    padding: 0.75rem 1rem;
+  }
+
+  app-dashboard .guest-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.75rem;
+  }
+
+  app-rooms .room-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  app-rooms .actions .btn,
+  app-rooms .actions a.btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+  }
+
+  app-subadmins .layout {
+    grid-template-columns: 1fr;
+  }
+
+  app-subadmins .panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  app-subadmins .panel-head .btn {
+    width: 100%;
+  }
+
+  app-categories .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  app-dashboard .day {
+    min-height: 1.85rem;
+    font-size: 0.6875rem;
+  }
+
+  app-dashboard .day-count {
+    font-size: 0.5rem;
+  }
 }

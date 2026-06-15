@@ -6,7 +6,9 @@ import { Component, input } from '@angular/core';
   template: `
     <header class="page-header" [class.centered]="centered()">
       <div class="page-header-text">
-        <p class="eyebrow">1125 Beach Villa</p>
+        @if (showEyebrow()) {
+          <p class="eyebrow">1125 Beach Villa</p>
+        }
         <h1>{{ title() }}</h1>
         @if (subtitle()) {
           <p class="subtitle">{{ subtitle() }}</p>
@@ -27,6 +29,9 @@ import { Component, input } from '@angular/core';
       padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-light);
       animation: fadeIn 0.35s ease;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .page-header.centered {
@@ -80,6 +85,7 @@ import { Component, input } from '@angular/core';
       color: var(--text);
       letter-spacing: -0.025em;
       line-height: 1.2;
+      overflow-wrap: anywhere;
     }
 
     .subtitle {
@@ -96,17 +102,48 @@ import { Component, input } from '@angular/core';
       gap: 0.625rem;
       flex-shrink: 0;
       padding-bottom: 0.125rem;
+      min-width: 0;
     }
 
     @media (max-width: 720px) {
       .page-header {
         flex-direction: column;
         align-items: stretch;
+        gap: 1rem;
       }
 
       .actions {
         justify-content: flex-start;
+        flex-wrap: wrap;
         padding-bottom: 0;
+        width: 100%;
+      }
+
+      .actions .btn,
+      .actions a.btn {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      h1 {
+        font-size: 1.375rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions .btn,
+      .actions a.btn {
+        width: 100%;
       }
     }
   `,
@@ -115,4 +152,5 @@ export class PageHeaderComponent {
   readonly title = input.required<string>();
   readonly subtitle = input<string>('');
   readonly centered = input(false);
+  readonly showEyebrow = input(true);
 }

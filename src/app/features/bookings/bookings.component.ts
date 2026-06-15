@@ -6,6 +6,7 @@ import { map } from 'rxjs';
 import { Booking, BookingSection, sectionToBookingFilter } from '../../core/models/booking.model';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingApiService } from '../../core/services/booking-api.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
@@ -16,7 +17,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
   standalone: true,
   imports: [PageHeaderComponent, EmptyStateComponent, CurrencyPipe, DatePipe, UpperCasePipe],
   template: `
-    <app-page-header [title]="pageTitle()" [subtitle]="pageSubtitle()">
+    <app-page-header [title]="pageTitle()" [showEyebrow]="false">
       <button
         type="button"
         class="btn btn-secondary btn-sm"
@@ -57,11 +58,11 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
         message="Try a different guest name, email, room, or booking reference."
       />
     } @else {
-      <div class="table-wrap">
+      <div class="table-wrap bookings-table">
         <table>
           <thead>
             <tr>
-              <th>Guest</th>
+              <th class="col-sticky-left">Guest</th>
               <th>Type</th>
               <th>Stay</th>
               <th>Dates</th>
@@ -70,14 +71,14 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
               <th>Payment</th>
               <th>Status</th>
               @if (showActionsColumn()) {
-                <th>Actions</th>
+                <th class="col-sticky-right">Actions</th>
               }
             </tr>
           </thead>
           <tbody>
             @for (b of visibleBookings(); track b.id) {
               <tr [class.row-cancelled]="b.status === 'cancelled'">
-                <td>
+                <td class="col-sticky-left">
                   <strong>{{ b.guest.firstName }} {{ b.guest.lastName }}</strong>
                   <small>{{ b.guest.email }}</small>
                   @if (b.guest.mobileNumber) {
@@ -119,7 +120,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
                   <span class="badge-status" [class]="statusClass(b.status)">{{ statusLabel(b.status) }}</span>
                 </td>
                 @if (showActionsColumn()) {
-                  <td class="actions-cell">
+                  <td class="actions-cell col-sticky-right">
                     @if (section() === 'incomplete') {
                       <button
                         type="button"
@@ -148,6 +149,133 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
     }
   `,
   styles: `
+    :host {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .bookings-table {
+      max-height: min(70vh, calc(100dvh - var(--header-height) - 15rem));
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .bookings-table table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .bookings-table th,
+    .bookings-table td {
+      min-width: 7.5rem;
+      white-space: nowrap;
+    }
+
+    .bookings-table th.col-sticky-left,
+    .bookings-table td.col-sticky-left {
+      min-width: 11rem;
+      max-width: 14rem;
+      white-space: normal;
+    }
+
+    .bookings-table th.col-sticky-right,
+    .bookings-table td.col-sticky-right {
+      min-width: 10.5rem;
+    }
+
+    .bookings-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .bookings-table .col-sticky-left {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--white);
+      box-shadow: 1px 0 0 var(--border-light);
+    }
+
+    .bookings-table th.col-sticky-left {
+      z-index: 4;
+      background: linear-gradient(180deg, var(--primary-muted) 0%, #eef4f9 100%);
+    }
+
+    .bookings-table .col-sticky-right {
+      position: sticky;
+      right: 0;
+      z-index: 1;
+      background: var(--white);
+      box-shadow: -1px 0 0 var(--border-light);
+    }
+
+    .bookings-table th.col-sticky-right {
+      z-index: 4;
+      background: linear-gradient(180deg, var(--primary-muted) 0%, #eef4f9 100%);
+    }
+
+    .bookings-table tbody tr:hover .col-sticky-left,
+    .bookings-table tbody tr:hover .col-sticky-right {
+      background: #e8f0f6;
+    }
+
+    @media (max-width: 768px) {
+      .bookings-table {
+        max-height: min(55vh, calc(100dvh - var(--header-height) - 11rem));
+        border-radius: var(--radius-sm);
+      }
+
+      .bookings-table th,
+      .bookings-table td {
+        min-width: 5.5rem;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8125rem;
+        white-space: normal;
+      }
+
+      .bookings-table th.col-sticky-left,
+      .bookings-table td.col-sticky-left,
+      .bookings-table th.col-sticky-right,
+      .bookings-table td.col-sticky-right {
+        position: static;
+        box-shadow: none;
+        min-width: 5.5rem;
+        max-width: none;
+      }
+
+      .bookings-table .actions-cell {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.375rem;
+        min-width: 7rem;
+      }
+
+      .bookings-table .actions-cell .btn {
+        width: 100%;
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .bookings-table {
+        max-height: min(50vh, calc(100dvh - var(--header-height) - 10rem));
+      }
+
+      .bookings-table th,
+      .bookings-table td {
+        min-width: 4.75rem;
+        padding: 0.5rem 0.625rem;
+        font-size: 0.75rem;
+      }
+    }
+
     .pay-method {
       font-size: 0.75rem;
       font-weight: 600;
@@ -183,6 +311,7 @@ export class BookingsComponent implements OnInit {
   protected readonly bookingApi = inject(BookingApiService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly actionId = signal<string | null>(null);
   protected readonly searchQuery = signal('');
@@ -267,8 +396,13 @@ export class BookingsComponent implements OnInit {
     return haystack.includes(query);
   }
 
-  protected confirmBooking(booking: Booking): void {
-    if (!confirm(`Confirm booking for ${booking.guest.firstName} ${booking.guest.lastName}?`)) return;
+  protected async confirmBooking(booking: Booking): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: 'Confirm booking',
+      message: `Confirm booking for ${booking.guest.firstName} ${booking.guest.lastName}?`,
+      confirmLabel: 'Confirm booking',
+    });
+    if (!ok) return;
 
     this.actionId.set(booking.id);
     this.bookingApi.manualConfirm(booking.id).subscribe({
@@ -280,8 +414,14 @@ export class BookingsComponent implements OnInit {
     });
   }
 
-  protected cancelBooking(booking: Booking): void {
-    if (!confirm(`Cancel booking for ${booking.guest.firstName} ${booking.guest.lastName}?`)) return;
+  protected async cancelBooking(booking: Booking): Promise<void> {
+    const ok = await this.confirmService.confirm({
+      title: 'Cancel booking',
+      message: `Cancel booking for ${booking.guest.firstName} ${booking.guest.lastName}? This action cannot be undone.`,
+      confirmLabel: 'Yes, cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     this.actionId.set(booking.id);
     this.bookingApi.cancel(booking.id).subscribe({
@@ -301,17 +441,6 @@ export class BookingsComponent implements OnInit {
         return 'Cancelled bookings';
       default:
         return 'Incomplete bookings';
-    }
-  }
-
-  protected pageSubtitle(): string {
-    switch (this.section()) {
-      case 'complete':
-        return 'Paid and confirmed guest reservations.';
-      case 'cancelled':
-        return 'Reservations that were cancelled.';
-      default:
-        return 'Bookings awaiting payment or confirmation.';
     }
   }
 

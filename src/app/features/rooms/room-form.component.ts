@@ -154,10 +154,18 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   styles: `
     :host {
       display: block;
-      height: calc(100vh - var(--header-height) - 4.25rem);
-      max-height: calc(100vh - var(--header-height) - 4.25rem);
-      overflow-y: auto;
-      overflow-x: hidden;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    @media (min-width: 1025px) {
+      :host {
+        height: calc(100vh - var(--header-height) - 4.25rem);
+        max-height: calc(100vh - var(--header-height) - 4.25rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
     }
 
     .room-form-page {
@@ -438,12 +446,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     }
 
     @media (max-width: 860px) {
-      :host {
-        height: auto;
-        max-height: none;
-        overflow: visible;
-      }
-
       .form-grid {
         grid-template-columns: 1fr;
       }
@@ -451,6 +453,41 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       .fields-2,
       .fields-3 {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .form-actions {
+        flex-wrap: wrap;
+        justify-content: stretch;
+      }
+
+      .form-actions .btn {
+        flex: 1 1 calc(50% - 0.375rem);
+        min-width: 0;
+      }
+
+      .compact-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .field-short,
+      .field-price,
+      .field-currency,
+      .field-unit {
+        width: 100%;
+        flex: none;
+      }
+
+      .fields-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .form-actions .btn {
+        flex: 1 1 100%;
       }
     }
   `,

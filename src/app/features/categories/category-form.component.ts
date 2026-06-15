@@ -66,10 +66,26 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     .form-actions {
       display: flex;
       justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 0.625rem;
       margin-top: 1.5rem;
       padding-top: 1.25rem;
       border-top: 1px solid var(--border-light);
+    }
+
+    @media (max-width: 480px) {
+      .form-card {
+        padding: 1rem;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
     }
   `,
 })

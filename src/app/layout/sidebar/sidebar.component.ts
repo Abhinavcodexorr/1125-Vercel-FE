@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { SidebarService } from '../../core/services/sidebar.service';
 
@@ -20,7 +21,7 @@ interface NavItem {
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <aside class="sidebar" [class.collapsed]="sidebar.isCollapsed()">
+    <aside class="sidebar" [class.collapsed]="sidebar.isCollapsed()" [class.mobile-open]="sidebar.isMobileOpen()">
       <div class="brand">
         @if (sidebar.isCollapsed()) {
           <a routerLink="/dashboard" class="brand-mark" title="1125 Beach Villa">
@@ -360,12 +361,44 @@ interface NavItem {
     .sidebar.collapsed .nav-section {
       display: none;
     }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: min(var(--sidebar-width), 85vw);
+        transform: translateX(-100%);
+        transition: transform var(--transition), width var(--transition);
+        z-index: 100;
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar.collapsed {
+        width: min(var(--sidebar-width), 85vw);
+      }
+
+      .sidebar.collapsed .nav-label,
+      .sidebar.collapsed .nav-section {
+        display: block;
+      }
+
+      .sidebar.collapsed .nav-link {
+        justify-content: flex-start;
+      }
+    }
   `,
 })
 export class SidebarComponent {
   protected readonly sidebar = inject(SidebarService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+
+  constructor() {
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => this.sidebar.closeMobile());
+  }
 
   protected readonly nav = computed<NavItem[]>(() => {
     const items: NavItem[] = [
