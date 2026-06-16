@@ -7,18 +7,7 @@
 <div class="alert alert-error" *ngIf="api.error()">{{ api.error() }}</div>
 
 <div class="filter-bar">
-  <label for="subscriber-search">Search</label>
-  <input
-    id="subscriber-search"
-    type="search"
-    placeholder="Filter by email…"
-    [value]="searchQuery()"
-    (input)="onSearchInput($event)"
-    (keyup.enter)="applySearch()"
-  />
-  <button type="button" class="btn btn-primary btn-sm" (click)="applySearch()" [disabled]="api.loading()">Search</button>
-  <button type="button" class="btn btn-ghost btn-sm" *ngIf="searchQuery()" (click)="clearSearch()">Clear</button>
-  <span class="result-count filter-spacer">{{ api.list().total }} total</span>
+  <span class="result-count">{{ api.list().total }} total</span>
 </div>
 
 <app-empty-state

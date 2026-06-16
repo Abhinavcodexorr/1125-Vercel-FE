@@ -22,7 +22,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
     RoomAvailabilityModalComponent,
   ],
   template: `
-    <app-page-header title="Rooms & Villas">
+    <app-page-header title="Rooms">
       <a routerLink="/rooms/new" class="btn btn-primary">+ Add room</a>
     </app-page-header>
 

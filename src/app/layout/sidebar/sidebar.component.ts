@@ -403,7 +403,7 @@ export class SidebarComponent {
   protected readonly nav = computed<NavItem[]>(() => {
     const items: NavItem[] = [
       { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
-      { label: 'Rooms & Villas', route: '/rooms', icon: 'rooms' },
+      { label: 'Rooms', route: '/rooms', icon: 'rooms' },
       {
         label: 'Bookings',
         route: '/bookings',

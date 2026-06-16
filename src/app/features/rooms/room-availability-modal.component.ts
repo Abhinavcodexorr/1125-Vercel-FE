@@ -59,7 +59,6 @@ interface CalendarMonth {
               <span><i class="dot available"></i> Available</span>
               <span><i class="dot booked"></i> Fully booked</span>
               <span><i class="dot blocked"></i> Blocked</span>
-              <span><i class="dot today"></i> Today</span>
             </div>
 
             <section class="calendar">

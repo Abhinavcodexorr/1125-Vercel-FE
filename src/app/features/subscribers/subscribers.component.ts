@@ -14,7 +14,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 export class SubscribersComponent implements OnInit {
   protected readonly api = inject(SubscribeApiService);
 
-  protected readonly searchQuery = signal('');
   protected readonly page = signal(1);
   protected readonly limit = 20;
 
@@ -27,24 +26,8 @@ export class SubscribersComponent implements OnInit {
       .load({
         page: this.page(),
         limit: this.limit,
-        search: this.searchQuery().trim() || undefined,
       })
       .subscribe();
-  }
-
-  protected onSearchInput(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
-  }
-
-  protected applySearch(): void {
-    this.page.set(1);
-    this.load();
-  }
-
-  protected clearSearch(): void {
-    this.searchQuery.set('');
-    this.page.set(1);
-    this.load();
   }
 
   protected prevPage(): void {

@@ -55,7 +55,6 @@ interface CalendarMonth {
         </div>
         <div class="calendar-actions">
           <span class="month-chip">{{ monthBookedDays() }} booked days</span>
-          <button type="button" class="btn btn-secondary btn-sm" (click)="goToToday()">Today</button>
         </div>
       </div>
 
@@ -69,7 +68,6 @@ interface CalendarMonth {
         <div class="legend">
           <span><i class="dot available"></i> Available</span>
           <span><i class="dot booked"></i> Booked</span>
-          <span><i class="dot today"></i> Today</span>
         </div>
 
         @if (calendarLoading()) {
@@ -136,16 +134,25 @@ interface CalendarMonth {
               @for (b of selectedDayBookings(); track b.id) {
                 <li [class.expanded]="expandedBookingId() === b.id">
                   <button type="button" class="guest-row" (click)="toggleBooking(b.id)">
-                    <span class="guest-avatar">{{ guestInitials(b.guestName) }}</span>
+                    <span class="guest-avatar">{{ guestInitials(b.roomTitle) }}</span>
                     <span class="guest-summary">
-                      <span class="guest-name">{{ b.guestName }}</span>
-                      <span class="guest-room">{{ b.roomTitle }}</span>
+                      <span class="guest-name">{{ b.roomTitle }}</span>
+                      <span class="guest-room">{{ b.cabinType || b.title || '—' }}</span>
                     </span>
                     <span class="chevron" [class.open]="expandedBookingId() === b.id">›</span>
                   </button>
                   <div class="guest-detail-wrap" [class.expanded]="expandedBookingId() === b.id">
                     <div class="guest-detail-inner">
                       <dl class="detail-grid">
+                        <div class="detail-item">
+                          <dt>Room</dt>
+                          <dd>
+                            {{ b.roomTitle }}
+                            @if (b.cabinType || b.title) {
+                              ({{ b.cabinType || b.title }})
+                            }
+                          </dd>
+                        </div>
                         @if (b.bookingReference) {
                           <div class="detail-item">
                             <dt>Reference</dt>
@@ -173,7 +180,7 @@ interface CalendarMonth {
                         <div class="detail-item">
                           <dt>Stay</dt>
                           <dd>
-                            {{ b.checkIn | date: 'MMM d' }} – {{ b.checkOut | date: 'MMM d, y' }}
+                            {{ b.checkIn | date: 'MMM d, y' }} – {{ b.checkOut | date: 'MMM d, y' }}
                           </dd>
                         </div>
                         @if (b.adults != null) {
@@ -425,8 +432,8 @@ interface CalendarMonth {
       gap: 0.125rem;
       border-radius: 10px;
       font-size: 0.875rem;
-      background: #e6f4ed;
-      color: var(--success);
+      background: transparent;
+      color: var(--text);
       border: 1px solid transparent;
       padding: 0.25rem;
       font-family: inherit;
@@ -435,8 +442,8 @@ interface CalendarMonth {
     }
 
     .day.available {
-      background: #e6f4ed;
-      color: #2d7a54;
+      background: transparent;
+      color: var(--text);
     }
 
     .day.past {
@@ -820,29 +827,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     return [
       {
-        label: 'Active rooms',
-        icon: '⌂',
-        value: String(this.roomCount()),
-      },
-      {
         label: 'Total bookings',
         icon: '☰',
         value: String(statistics?.totalBookings ?? dashboard?.totalBookings ?? 0),
-      },
-      {
-        label: 'Pending',
-        icon: '…',
-        value: String(statistics?.pendingBookings ?? 0),
-      },
-      {
-        label: 'Paid / confirmed',
-        icon: '✓',
-        value: String(statistics?.confirmedBookings ?? 0),
-      },
-      {
-        label: 'Cancelled',
-        icon: '×',
-        value: String(statistics?.cancelledBookings ?? dashboard?.cancelledBookings ?? 0),
       },
       {
         label: 'Revenue',

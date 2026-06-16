@@ -19,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
           </p>
 
           <ul class="brand-points">
-            <li>Room & villa management</li>
+            <li>Room management</li>
             <li>Category-first listings</li>
             <li>Secure admin access</li>
           </ul>

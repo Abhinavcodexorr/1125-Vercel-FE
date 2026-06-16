@@ -1,15 +1,20 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { RoomCreatePayload, RoomImage, RoomUpdatePayload } from '../../core/models/room.model';
+import {
+  findPredefinedAmenity,
+  PREDEFINED_ROOM_AMENITIES,
+} from '../../core/constants/room-amenities';
+import { RoomAmenity, RoomCreatePayload, RoomImage, RoomUpdatePayload } from '../../core/models/room.model';
 import { RoomApiService } from '../../core/services/room-api.service';
 import { UploadService } from '../../core/services/upload.service';
+import { RoomAmenityIconComponent } from '../../shared/components/room-amenity-icon/room-amenity-icon.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-room-form',
   standalone: true,
-  imports: [PageHeaderComponent, ReactiveFormsModule, RouterLink],
+  imports: [PageHeaderComponent, ReactiveFormsModule, RouterLink, RoomAmenityIconComponent],
   template: `
     <div class="room-form-page">
       <app-page-header [title]="isEdit ? 'Edit room' : 'Add room'" />
@@ -42,9 +47,37 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
               <textarea formControlName="description" rows="3"></textarea>
             </div>
 
-            <div class="form-group compact">
+            <div class="form-group compact amenities-group">
               <label>Amenities</label>
-              <input formControlName="amenitiesText" placeholder="WiFi, Pool, Beach Access" />
+              <div class="amenities-grid" role="group" aria-label="Room amenities">
+                @for (amenity of predefinedAmenities; track amenity.key) {
+                  <button
+                    type="button"
+                    class="amenity-option"
+                    [class.selected]="isAmenitySelected(amenity.key)"
+                    [attr.aria-pressed]="isAmenitySelected(amenity.key)"
+                    (click)="toggleAmenity(amenity.key)"
+                  >
+                    <span class="amenity-icon-wrap">
+                      <app-room-amenity-icon [icon]="amenity.icon" />
+                    </span>
+                    <span class="amenity-label">{{ amenity.name }}</span>
+                  </button>
+                }
+              </div>
+
+              <label class="other-amenity-toggle">
+                <input type="checkbox" formControlName="showOtherAmenities" />
+                Other
+              </label>
+
+              @if (form.controls.showOtherAmenities.value) {
+                <input
+                  formControlName="otherAmenitiesText"
+                  placeholder="e.g. Pool, Ocean View, Private Deck"
+                />
+                <p class="amenities-hint">Separate custom amenities with commas.</p>
+              }
             </div>
 
             <div class="compact-row">
@@ -439,6 +472,83 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       cursor: pointer;
     }
 
+    .amenities-group label {
+      display: block;
+    }
+
+    .amenities-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.625rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .amenity-option {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      min-height: 3rem;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition:
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .amenity-option:hover {
+      border-color: var(--primary-light);
+      background: var(--primary-muted);
+    }
+
+    .amenity-option.selected {
+      border-color: #8b2942;
+      background: #fdf7f8;
+      box-shadow: inset 0 0 0 1px rgba(139, 41, 66, 0.12);
+    }
+
+    .amenity-icon-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      color: #8b2942;
+      flex-shrink: 0;
+    }
+
+    .amenity-label {
+      line-height: 1.25;
+    }
+
+    .other-amenity-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .other-amenity-toggle input {
+      width: auto;
+    }
+
+    .amenities-hint {
+      margin: 0.35rem 0 0;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
     @media (max-width: 1024px) {
       .fields-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -465,6 +575,10 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       .form-actions .btn {
         flex: 1 1 calc(50% - 0.375rem);
         min-width: 0;
+      }
+
+      .amenities-grid {
+        grid-template-columns: 1fr;
       }
 
       .compact-row {
@@ -504,6 +618,9 @@ export class RoomFormComponent implements OnInit {
     { code: 'GHS', label: 'Ghana Cedi', symbol: '₵' },
   ] as const;
 
+  protected readonly predefinedAmenities = PREDEFINED_ROOM_AMENITIES;
+  protected readonly selectedAmenityKeys = signal<Set<string>>(new Set());
+
   protected readonly priceSymbol = signal('$');
 
   protected isEdit = false;
@@ -526,7 +643,8 @@ export class RoomFormComponent implements OnInit {
     size: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     unit: ['sq ft'],
     currency: ['USD', Validators.required],
-    amenitiesText: [''],
+    showOtherAmenities: [false],
+    otherAmenitiesText: [''],
     isActive: [true],
   });
 
@@ -552,9 +670,9 @@ export class RoomFormComponent implements OnInit {
             size: room.size > 0 ? room.size : null,
             unit: room.unit || 'sq ft',
             currency: room.currency || 'USD',
-            amenitiesText: room.amenities.map((a) => a.name).join(', '),
             isActive: room.isActive,
           });
+          this.applyAmenitiesFromRoom(room.amenities);
           this.syncPriceSymbol(room.currency || 'USD');
           this.images.set([...room.images].sort((a, b) => a.order - b.order));
           this.roomIdOrSlug = room.id || room.slug;
@@ -600,6 +718,66 @@ export class RoomFormComponent implements OnInit {
     );
   }
 
+  protected isAmenitySelected(key: string): boolean {
+    return this.selectedAmenityKeys().has(key);
+  }
+
+  protected toggleAmenity(key: string): void {
+    this.selectedAmenityKeys.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  private applyAmenitiesFromRoom(amenities: RoomAmenity[]): void {
+    const selected = new Set<string>();
+    const others: string[] = [];
+
+    for (const amenity of amenities) {
+      const predefined = findPredefinedAmenity(amenity.key, amenity.name);
+      if (predefined) {
+        selected.add(predefined.key);
+      } else if (amenity.name.trim()) {
+        others.push(amenity.name.trim());
+      }
+    }
+
+    this.selectedAmenityKeys.set(selected);
+    this.form.patchValue({
+      showOtherAmenities: others.length > 0,
+      otherAmenitiesText: others.join(', '),
+    });
+  }
+
+  private buildAmenitiesPayload(): RoomAmenity[] {
+    const raw = this.form.getRawValue();
+    const predefined = PREDEFINED_ROOM_AMENITIES.filter((amenity) =>
+      this.selectedAmenityKeys().has(amenity.key),
+    ).map((amenity) => ({
+      key: amenity.key,
+      name: amenity.name,
+      icon: amenity.icon,
+      iconType: 'custom',
+    }));
+
+    const custom = raw.showOtherAmenities
+      ? raw.otherAmenitiesText
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .map((name) => ({
+            key: slugify(name),
+            name,
+            icon: slugify(name),
+            iconType: 'custom',
+          }))
+      : [];
+
+    return [...predefined, ...custom];
+  }
+
   private syncPriceSymbol(code: string): void {
     const symbol =
       this.currencyOptions.find((option) => option.code === code)?.symbol ?? '$';
@@ -614,19 +792,7 @@ export class RoomFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     const title = raw.title.trim();
-    const amenities = raw.amenitiesText
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((name) => {
-        const key = name.toLowerCase().replace(/\s+/g, '_');
-        return {
-          key,
-          name,
-          icon: key,
-          iconType: 'material' as const,
-        };
-      });
+    const amenities = this.buildAmenitiesPayload();
 
     const base: RoomCreatePayload | RoomUpdatePayload = {
       title,
