@@ -1,13 +1,13 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import {
   BookingCalendarEntry,
   isPaidCalendarBooking,
 } from '../../core/models/booking.model';
 import { BookingApiService } from '../../core/services/booking-api.service';
-import { RoomApiService } from '../../core/services/room-api.service';
+import { DashboardStatsComponent } from './dashboard-stats.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 type DayStatus = 'empty' | 'past' | 'available' | 'booked';
@@ -28,24 +28,14 @@ interface CalendarMonth {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [PageHeaderComponent, CurrencyPipe, DatePipe],
+  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, DashboardStatsComponent],
   template: `
     <app-page-header
       title="Dashboard"
-      subtitle="Overview of 1125 Beach Villa — rooms & bookings"
+      subtitle="Booking overview"
     />
 
-    <div class="stats">
-      @for (stat of statCards(); track stat.label) {
-        <div class="stat card card-interactive">
-          <div class="stat-icon">{{ stat.icon }}</div>
-          <div>
-            <span class="stat-value">{{ stat.value }}</span>
-            <span class="stat-label">{{ stat.label }}</span>
-          </div>
-        </div>
-      }
-    </div>
+    <app-dashboard-stats />
 
     <section class="card calendar-panel">
       <div class="calendar-top">
@@ -215,50 +205,6 @@ interface CalendarMonth {
     }
   `,
   styles: `
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.25rem 1.375rem;
-      border-left: 3px solid var(--primary-dark);
-    }
-
-    .stat-icon {
-      width: 50px;
-      height: 50px;
-      background: linear-gradient(135deg, var(--primary-soft), var(--white));
-      color: var(--primary-dark);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      flex-shrink: 0;
-    }
-
-    .stat-value {
-      display: block;
-      font-size: 1.625rem;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-    }
-
-    .stat-label {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
     .muted {
       color: var(--text-muted);
       font-size: 0.875rem;
@@ -759,10 +705,6 @@ interface CalendarMonth {
     }
 
     @media (max-width: 1100px) {
-      .stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
       .calendar-top {
         flex-direction: column;
       }
@@ -780,11 +722,9 @@ interface CalendarMonth {
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly bookingApi = inject(BookingApiService);
-  private readonly roomApi = inject(RoomApiService);
 
   protected readonly weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   protected readonly calendarLoading = signal(true);
-  protected readonly roomCount = signal(0);
   protected readonly calendarBookings = signal<BookingCalendarEntry[]>([]);
   protected readonly selectedDate = signal<string | null>(null);
   protected readonly expandedBookingId = signal<string | null>(null);
@@ -820,38 +760,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return booked.size;
   });
 
-  protected readonly statCards = computed(() => {
-    const dashboard = this.bookingApi.dashboard();
-    const statistics = this.bookingApi.statistics();
-    const revenue = statistics?.totalRevenue ?? dashboard?.totalPayment ?? 0;
-
-    return [
-      {
-        label: 'Total bookings',
-        icon: '☰',
-        value: String(statistics?.totalBookings ?? dashboard?.totalBookings ?? 0),
-      },
-      {
-        label: 'Revenue',
-        icon: '$',
-        value: new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          maximumFractionDigits: 0,
-        }).format(revenue),
-      },
-    ];
-  });
-
   ngOnInit(): void {
-    forkJoin({
-      rooms: this.roomApi.loadAll(true).pipe(catchError(() => of([]))),
-      dashboard: this.bookingApi.loadDashboard().pipe(catchError(() => of(null))),
-      statistics: this.bookingApi.loadStatistics().pipe(catchError(() => of(null))),
-    }).subscribe(({ rooms }) => {
-      this.roomCount.set(rooms.length);
-    });
-
     this.loadCalendar();
   }
 

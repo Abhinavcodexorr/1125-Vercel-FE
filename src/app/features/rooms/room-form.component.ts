@@ -98,14 +98,11 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
               </div>
               <div class="form-group compact field-currency">
                 <label>Currency *</label>
-                <div class="currency-select-wrap">
-                  <span class="symbol">{{ priceSymbol() }}</span>
-                  <select formControlName="currency">
-                    @for (option of currencyOptions; track option.code) {
-                      <option [value]="option.code">{{ option.symbol }} {{ option.label }}</option>
-                    }
-                  </select>
-                </div>
+                <select formControlName="currency" class="form-select">
+                  @for (option of currencyOptions; track option.code) {
+                    <option [value]="option.code">{{ option.symbol }} {{ option.label }}</option>
+                  }
+                </select>
               </div>
             </div>
 
@@ -116,7 +113,11 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
               </div>
               <div class="form-group compact field-unit">
                 <label>Unit</label>
-                <input formControlName="unit" placeholder="sq m" />
+                <select formControlName="unit" class="form-select">
+                  @for (option of unitOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
               </div>
             </div>
 
@@ -163,10 +164,34 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
             }
 
             @if (images().length > 0) {
+              <p class="images-hint">Use arrows to change image order. First image is the cover.</p>
               <ul class="image-strip">
-                @for (img of images(); track img.url) {
+                @for (img of images(); track img.url; let i = $index) {
                   <li class="image-thumb">
-                    <img [src]="img.url" alt="Room" />
+                    <img [src]="img.url" alt="Room photo {{ i + 1 }}" />
+                    @if (images().length > 1) {
+                      <div class="reorder-bar">
+                        <button
+                          type="button"
+                          class="reorder-btn"
+                          (click)="moveImage(i, -1)"
+                          [disabled]="i === 0"
+                          aria-label="Move image earlier"
+                        >
+                          ‹
+                        </button>
+                        <span class="order-badge">{{ i + 1 }}</span>
+                        <button
+                          type="button"
+                          class="reorder-btn"
+                          (click)="moveImage(i, 1)"
+                          [disabled]="i === images().length - 1"
+                          aria-label="Move image later"
+                        >
+                          ›
+                        </button>
+                      </div>
+                    }
                     <button type="button" class="remove-btn" (click)="removeImage(img.url)" aria-label="Remove">
                       ×
                     </button>
@@ -338,27 +363,10 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       padding: 0.625rem 0.875rem 0.625rem 2rem;
     }
 
-    .currency-select-wrap {
-      position: relative;
+    :host .form-group.compact .form-select,
+    :host .form-group.compact select.form-select {
       width: 100%;
-    }
-
-    .currency-select-wrap .symbol {
-      position: absolute;
-      left: 0.875rem;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 1;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    :host .form-group.compact .currency-select-wrap select {
-      width: 100%;
-      padding: 0.625rem 0.875rem 0.625rem 2rem;
+      padding: 0.625rem 0.875rem;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--white);
@@ -367,7 +375,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       cursor: pointer;
     }
 
-    :host .form-group.compact .currency-select-wrap select:focus {
+    :host .form-group.compact .form-select:focus,
+    :host .form-group.compact select.form-select:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(124, 165, 200, 0.2);
@@ -455,6 +464,53 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .images-hint {
+      margin: 0 0 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .reorder-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 100%);
+    }
+
+    .reorder-btn {
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      font-size: 0.875rem;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reorder-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .order-badge {
+      min-width: 1rem;
+      text-align: center;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #fff;
     }
 
     .empty-images {
@@ -618,6 +674,11 @@ export class RoomFormComponent implements OnInit {
     { code: 'GHS', label: 'Ghana Cedi', symbol: '₵' },
   ] as const;
 
+  protected readonly unitOptions = [
+    { value: 'sq ft', label: 'sq ft' },
+    { value: 'sq m', label: 'sq m' },
+  ] as const;
+
   protected readonly predefinedAmenities = PREDEFINED_ROOM_AMENITIES;
   protected readonly selectedAmenityKeys = signal<Set<string>>(new Set());
 
@@ -668,7 +729,7 @@ export class RoomFormComponent implements OnInit {
             quantity: room.quantity ?? null,
             price: room.price,
             size: room.size > 0 ? room.size : null,
-            unit: room.unit || 'sq ft',
+            unit: normalizeUnit(room.unit),
             currency: room.currency || 'USD',
             isActive: room.isActive,
           });
@@ -716,6 +777,17 @@ export class RoomFormComponent implements OnInit {
         .filter((img) => img.url !== url)
         .map((img, order) => ({ ...img, order })),
     );
+  }
+
+  moveImage(index: number, direction: -1 | 1): void {
+    this.images.update((list) => {
+      const target = index + direction;
+      if (target < 0 || target >= list.length) return list;
+
+      const next = [...list];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next.map((img, order) => ({ ...img, order }));
+    });
   }
 
   protected isAmenitySelected(key: string): boolean {
@@ -837,4 +909,12 @@ function slugify(text: string): string {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function normalizeUnit(unit?: string): string {
+  const value = (unit ?? '').trim().toLowerCase().replace(/\./g, '');
+  if (value === 'sqm' || value === 'sq m' || value === 'square meter' || value === 'square meters') {
+    return 'sq m';
+  }
+  return 'sq ft';
 }

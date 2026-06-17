@@ -58,6 +58,16 @@ export interface BookingDashboardStats {
   activeCabins: number;
   cabinOnlyRevenueTillDate?: number;
   activityOnlyRevenueTillDate?: number;
+  cabinBookings?: number;
+  cabinCancelledBookings?: number;
+  activityBookings?: number;
+  activityCancelledBookings?: number;
+}
+
+export interface PaymentBreakdownItem {
+  id: string;
+  count: number;
+  totalAmount: number;
 }
 
 export interface BookingStatistics {
@@ -69,6 +79,7 @@ export interface BookingStatistics {
   cancelledBookings: number;
   totalRevenue: number;
   averageBookingValue: number;
+  paymentBreakdown: PaymentBreakdownItem[];
 }
 
 /** GET /booking/calendar item */
@@ -341,7 +352,36 @@ export function mapBookingDashboardStats(data: Record<string, unknown>): Booking
     activeCabins: Number(data['activeCabins'] ?? 0),
     cabinOnlyRevenueTillDate: Number(data['cabinOnlyRevenueTillDate'] ?? 0),
     activityOnlyRevenueTillDate: Number(data['activityOnlyRevenueTillDate'] ?? 0),
+    cabinBookings: Number(
+      data['cabinBookings'] ?? data['cabinTotalBookings'] ?? data['totalCabinBookings'] ?? 0,
+    ),
+    cabinCancelledBookings: Number(
+      data['cabinCancelledBookings'] ?? data['cabinCancelled'] ?? data['cancelledCabinBookings'] ?? 0,
+    ),
+    activityBookings: Number(
+      data['activityBookings'] ?? data['activityTotalBookings'] ?? data['totalActivityBookings'] ?? 0,
+    ),
+    activityCancelledBookings: Number(
+      data['activityCancelledBookings'] ??
+        data['activityCancelled'] ??
+        data['cancelledActivityBookings'] ??
+        0,
+    ),
   };
+}
+
+function mapPaymentBreakdown(data: Record<string, unknown>): PaymentBreakdownItem[] {
+  const raw = data['paymentBreakdown'];
+  if (!Array.isArray(raw)) return [];
+
+  return raw.map((item) => {
+    const record = item as Record<string, unknown>;
+    return {
+      id: String(record['_id'] ?? record['id'] ?? ''),
+      count: Number(record['count'] ?? 0),
+      totalAmount: Number(record['totalAmount'] ?? 0),
+    };
+  });
 }
 
 export function mapBookingStatistics(data: Record<string, unknown>): BookingStatistics {
@@ -352,8 +392,9 @@ export function mapBookingStatistics(data: Record<string, unknown>): BookingStat
     confirmedBookings: Number(breakdown['confirmedBookings'] ?? 0),
     checkedInBookings: Number(breakdown['checkedInBookings'] ?? 0),
     checkedOutBookings: Number(breakdown['checkedOutBookings'] ?? 0),
-    cancelledBookings: Number(breakdown['cancelledBookings'] ?? 0),
-    totalRevenue: Number(breakdown['totalRevenue'] ?? 0),
+    cancelledBookings: Number(data['cancelledBookings'] ?? breakdown['cancelledBookings'] ?? 0),
+    totalRevenue: Number(data['totalRevenue'] ?? breakdown['totalRevenue'] ?? 0),
     averageBookingValue: Number(breakdown['averageBookingValue'] ?? 0),
+    paymentBreakdown: mapPaymentBreakdown(data),
   };
 }
