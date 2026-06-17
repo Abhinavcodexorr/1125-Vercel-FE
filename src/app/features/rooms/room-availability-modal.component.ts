@@ -1,10 +1,14 @@
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { RoomAvailability, RoomBlockedDate } from '../../core/models/room.model';
+import { catchError, switchMap } from 'rxjs/operators';
+import {
+  RoomAvailability,
+  RoomBlockedDate,
+  mergeBlockedDatesIntoAvailability,
+} from '../../core/models/room.model';
 import { RoomApiService } from '../../core/services/room-api.service';
 
-type DayStatus = 'empty' | 'past' | 'available' | 'partial' | 'booked' | 'blocked';
+type DayStatus = 'empty' | 'past' | 'pending' | 'available' | 'partial' | 'booked' | 'blocked';
 
 interface CalendarDay {
   key: string | null;
@@ -34,35 +38,38 @@ interface CalendarMonth {
           <button type="button" class="close" (click)="closed.emit()" aria-label="Close">×</button>
         </header>
 
-        @if (loading()) {
-          <div class="panel-body loading">Loading availability…</div>
-        } @else if (error()) {
-          <div class="panel-body">
+        <div class="panel-body">
+          @if (error()) {
             <div class="alert alert-error">{{ error() }}</div>
-          </div>
-        } @else {
-          <div class="panel-body">
-            @if (actionError()) {
-              <div class="alert alert-error">{{ actionError() }}</div>
-            }
+          }
+          @if (actionError()) {
+            <div class="alert alert-error">{{ actionError() }}</div>
+          }
 
-            @if (availability(); as avail) {
-              <div class="summary">
-                <span class="chip">{{ avail.room.quantity ?? 1 }} units</span>
-                <span class="chip booked">{{ avail.bookedDates.length }} booked days</span>
-                <span class="chip blocked">{{ avail.blockedDates?.length ?? 0 }} blocked</span>
-                <span class="chip available">{{ avail.availableDates.length }} available</span>
-              </div>
-            }
+          @if (loading()) {
+            <div class="summary summary-loading" aria-busy="true">
+              <span class="chip skeleton"></span>
+              <span class="chip skeleton"></span>
+              <span class="chip skeleton"></span>
+              <span class="chip skeleton"></span>
+            </div>
+          } @else if (availability(); as avail) {
+            <div class="summary">
+              <span class="chip">{{ roomQuantity() }} units</span>
+              <span class="chip booked">{{ avail.bookedDates.length }} booked days</span>
+              <span class="chip blocked">{{ avail.blockedDates?.length ?? 0 }} blocked</span>
+              <span class="chip available">{{ availableDayCount() }} available</span>
+            </div>
+          }
 
-            <div class="legend">
+          <div class="legend">
               <span><i class="dot available"></i> Available</span>
               <span><i class="dot booked"></i> Fully booked</span>
               <span><i class="dot blocked"></i> Blocked</span>
             </div>
 
-            <section class="calendar">
-              <div class="month-nav">
+          <section class="calendar" [class.calendar-loading]="loading()">
+            <div class="month-nav">
                 <button type="button" class="nav-btn" (click)="prevMonth()" [disabled]="!canGoPrev()" aria-label="Previous month">
                   ‹
                 </button>
@@ -89,6 +96,7 @@ interface CalendarMonth {
                         [class.booked]="displayStatus(cell) === 'booked'"
                         [class.blocked]="displayStatus(cell) === 'blocked'"
                         [class.past]="displayStatus(cell) === 'past'"
+                        [class.pending]="displayStatus(cell) === 'pending'"
                         [class.today]="cell.isToday"
                         [class.selected]="displayStatus(cell) === 'selected'"
                         [class.clickable]="isDayClickable(cell)"
@@ -104,30 +112,31 @@ interface CalendarMonth {
                   }
                 </div>
               }
-            </section>
+          </section>
 
-            <section class="update-section">
+          <section class="update-section">
+            @if (loading()) {
+              <p class="change-summary muted">Loading availability…</p>
+            } @else if (hasChanges()) {
+              <p class="change-summary">{{ changeSummary() }}</p>
+            } @else {
+              <p class="change-summary muted">No changes yet</p>
+            }
+            <div class="update-actions">
               @if (hasChanges()) {
-                <p class="change-summary">{{ changeSummary() }}</p>
-              } @else {
-                <p class="change-summary muted">No changes yet</p>
+                <button type="button" class="btn btn-sm" (click)="resetSelection()">Reset</button>
               }
-              <div class="update-actions">
-                @if (hasChanges()) {
-                  <button type="button" class="btn btn-sm" (click)="resetSelection()">Reset</button>
-                }
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  [disabled]="!hasChanges() || saving()"
-                  (click)="updateAvailability()"
-                >
-                  {{ saving() ? 'Updating…' : 'Update availability' }}
-                </button>
-              </div>
-            </section>
-          </div>
-        }
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="loading() || !hasChanges() || saving()"
+                (click)="updateAvailability()"
+              >
+                {{ saving() ? 'Updating…' : 'Update availability' }}
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   `,
@@ -201,6 +210,28 @@ interface CalendarMonth {
       text-align: center;
       color: var(--text-secondary);
       font-size: 0.9375rem;
+    }
+
+    .summary-loading {
+      pointer-events: none;
+    }
+
+    .chip.skeleton {
+      min-width: 5.5rem;
+      height: 1.75rem;
+      background: linear-gradient(90deg, var(--primary-muted) 25%, var(--primary-soft) 50%, var(--primary-muted) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s ease-in-out infinite;
+      color: transparent;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    .calendar-loading .day.pending {
+      animation: shimmer 1.2s ease-in-out infinite;
     }
 
     .summary {
@@ -430,6 +461,12 @@ interface CalendarMonth {
       color: var(--text-muted);
     }
 
+    .day.pending {
+      background: var(--primary-muted);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
     .day.today {
       box-shadow: inset 0 0 0 2px var(--primary);
     }
@@ -485,6 +522,7 @@ export class RoomAvailabilityModalComponent implements OnInit {
 
   readonly idOrSlug = input.required<string>();
   readonly roomTitle = input.required<string>();
+  readonly roomQuantity = input(1);
   readonly closed = output<void>();
   readonly updated = output<void>();
 
@@ -512,6 +550,25 @@ export class RoomAvailabilityModalComponent implements OnInit {
     return false;
   });
 
+  protected readonly availableDayCount = computed(() => {
+    const availability = this.availability();
+    if (!availability) return 0;
+    if (availability.availableDates.length > 0) return availability.availableDates.length;
+
+    const today = startOfDay(new Date());
+    const end = addDays(today, 365);
+    const booked = new Set(availability.bookedDates);
+    const blocked = new Set(availability.blockedDates ?? []);
+    let count = 0;
+
+    for (let date = new Date(today); date <= end; date = addDays(date, 1)) {
+      const key = dateKey(date);
+      if (!booked.has(key) && !blocked.has(key)) count++;
+    }
+
+    return count;
+  });
+
   protected readonly changeSummary = computed(() => {
     const availability = this.availability();
     if (!availability) return '';
@@ -526,28 +583,29 @@ export class RoomAvailabilityModalComponent implements OnInit {
   });
 
   protected readonly monthBounds = computed(() => {
-    const availability = this.availability();
-    if (!availability) return { min: monthIndex(new Date()), max: monthIndex(new Date()) };
-    return getMonthBounds(
-      availability.bookedDates,
-      availability.availableDates,
-      availability.blockedDates ?? [],
-    );
+    const today = startOfDay(new Date());
+    return {
+      min: monthIndex(today),
+      max: monthIndex(addDays(today, 365)),
+    };
   });
 
   protected readonly currentMonth = computed(() => {
     const availability = this.availability();
     const view = this.viewMonth();
-    if (!availability) return emptyMonth(view);
+    const today = startOfDay(new Date());
+    const todayKey = dateKey(today);
+
     return buildMonth(
       monthFromIndex(view),
-      new Set(availability.bookedDates),
-      new Set(availability.blockedDates ?? []),
-      new Set(availability.availableDates),
-      availability.occupancyByDate ?? {},
-      availability.room.quantity ?? 1,
-      startOfDay(new Date()),
-      dateKey(startOfDay(new Date())),
+      availability ? new Set(availability.bookedDates) : new Set(),
+      availability ? new Set(availability.blockedDates ?? []) : new Set(),
+      availability ? new Set(availability.availableDates) : new Set(),
+      availability?.occupancyByDate ?? {},
+      availability?.room.quantity ?? this.roomQuantity(),
+      today,
+      todayKey,
+      availability != null,
     );
   });
 
@@ -567,7 +625,8 @@ export class RoomAvailabilityModalComponent implements OnInit {
   }
 
   protected isDayClickable(cell: CalendarDay): boolean {
-    return cell.status !== 'booked' && cell.status !== 'past' && cell.status !== 'empty';
+    if (this.loading()) return false;
+    return cell.status !== 'booked' && cell.status !== 'past' && cell.status !== 'empty' && cell.status !== 'pending';
   }
 
   protected isDateSelected(key: string | null): boolean {
@@ -682,26 +741,47 @@ export class RoomAvailabilityModalComponent implements OnInit {
   private loadAll(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.reloadAvailability(true);
-  }
 
-  private reloadAvailability(initial = false): void {
-    this.roomApi.getAvailability(this.idOrSlug()).subscribe({
-      next: (data) => {
-        this.availability.set(data);
+    const idOrSlug = this.idOrSlug();
+    const roomContext = {
+      title: this.roomTitle(),
+      quantity: this.roomQuantity(),
+    };
+
+    forkJoin({
+      availability: this.roomApi.getAvailability(idOrSlug, roomContext),
+      blocked: this.roomApi.getBlockedDates(idOrSlug).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ availability, blocked }) => {
+        this.availability.set(mergeBlockedDatesIntoAvailability(availability, blocked));
         this.syncSelectedFromAvailability();
-        if (initial) {
-          this.viewMonth.set(monthIndex(new Date()));
-          this.loading.set(false);
-        }
+        this.viewMonth.set(monthIndex(new Date()));
+        this.loading.set(false);
       },
       error: (err) => {
-        if (initial) {
-          this.error.set(extractApiError(err, 'Failed to load availability.'));
-          this.loading.set(false);
-        } else {
-          this.actionError.set(extractApiError(err, 'Failed to refresh availability.'));
-        }
+        this.error.set(extractApiError(err, 'Failed to load availability.'));
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private reloadAvailability(): void {
+    const idOrSlug = this.idOrSlug();
+    const roomContext = {
+      title: this.roomTitle(),
+      quantity: this.roomQuantity(),
+    };
+
+    forkJoin({
+      availability: this.roomApi.getAvailability(idOrSlug, roomContext),
+      blocked: this.roomApi.getBlockedDates(idOrSlug).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ availability, blocked }) => {
+        this.availability.set(mergeBlockedDatesIntoAvailability(availability, blocked));
+        this.syncSelectedFromAvailability();
+      },
+      error: (err) => {
+        this.actionError.set(extractApiError(err, 'Failed to refresh availability.'));
       },
     });
   }
@@ -715,36 +795,12 @@ function extractApiError(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function getMonthBounds(
-  bookedDates: string[],
-  availableDates: string[],
-  blockedDates: string[],
-): { min: number; max: number } {
-  const today = startOfDay(new Date());
-  const current = monthIndex(today);
-  let max = monthIndex(addDays(today, 365));
-
-  const allKeys = [...bookedDates, ...availableDates, ...blockedDates];
-  if (allKeys.length > 0) {
-    const parsed = allKeys.map(parseDateKey);
-    const maxDate = parsed.reduce((latest, date) => (date > latest ? date : latest), parsed[0]);
-    max = Math.max(max, monthIndex(maxDate));
-  }
-
-  return { min: current, max };
-}
-
 function monthIndex(date: Date): number {
   return date.getFullYear() * 12 + date.getMonth();
 }
 
 function monthFromIndex(index: number): Date {
   return new Date(Math.floor(index / 12), index % 12, 1);
-}
-
-function emptyMonth(index: number): CalendarMonth {
-  const label = monthFromIndex(index).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-  return { label, weeks: [] };
 }
 
 function buildMonth(
@@ -756,6 +812,7 @@ function buildMonth(
   roomQuantity: number,
   today: Date,
   todayKey: string,
+  dataLoaded: boolean,
 ): CalendarMonth {
   const year = monthStart.getFullYear();
   const month = monthStart.getMonth();
@@ -780,10 +837,18 @@ function buildMonth(
       status = 'booked';
     } else if (date < today) {
       status = 'past';
-    } else if (availableSet.has(key) || (occupancy && occupancy.availableUnits > 0)) {
-      status = 'available';
+    } else if (!dataLoaded) {
+      status = 'pending';
+    } else if (
+      occupancy &&
+      occupancy.bookedCount > 0 &&
+      occupancy.availableUnits > 0 &&
+      occupancy.availableUnits < occupancy.quantity
+    ) {
+      status = 'partial';
+      label = `${occupancy.availableUnits}/${occupancy.quantity}`;
     } else {
-      status = 'past';
+      status = 'available';
     }
 
     cells.push({ key, day, status, isToday: key === todayKey, label });

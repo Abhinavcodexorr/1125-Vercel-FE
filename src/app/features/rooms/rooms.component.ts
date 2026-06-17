@@ -98,6 +98,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
       <app-room-availability-modal
         [idOrSlug]="room.slug || room.id"
         [roomTitle]="room.title"
+        [roomQuantity]="room.quantity"
         (closed)="closeAvailability()"
         (updated)="onAvailabilityUpdated(room)"
       />

@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, tap, throwError } from 'rxjs';
 import {
   AdminRoom,
+  ApiRoomAvailabilityData,
   ApiRoomDocument,
   RoomAvailability,
   RoomBlockDatePayload,
@@ -13,6 +14,8 @@ import {
   RoomStatusPayload,
   RoomUpdatePayload,
   mapApiRoom,
+  mapRoomAvailability,
+  mergeBlockedDatesIntoAvailability,
   unwrapApiData,
   unwrapApiItem,
   unwrapApiList,
@@ -128,14 +131,24 @@ export class RoomApiService {
   }
 
   /** GET /rooms/:idOrSlug/availability */
-  getAvailability(idOrSlug: string): Observable<RoomAvailability> {
+  getAvailability(
+    idOrSlug: string,
+    context?: { title: string; quantity?: number; type?: string },
+  ): Observable<RoomAvailability> {
     return this.http
       .get<unknown>(
         `${this.api.baseUrl}/rooms/${encodeURIComponent(idOrSlug)}/availability`,
         { headers: this.api.authHeaders() },
       )
       .pipe(
-        map((body) => unwrapApiData<RoomAvailability>(body)),
+        map((body) =>
+          mapRoomAvailability(unwrapApiData<ApiRoomAvailabilityData>(body), {
+            idOrSlug,
+            title: context?.title ?? '',
+            quantity: context?.quantity,
+            type: context?.type,
+          }),
+        ),
         catchError((err) => throwError(() => err)),
       );
   }

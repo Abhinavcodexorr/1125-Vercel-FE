@@ -181,6 +181,61 @@ export interface RoomAvailability {
   summary?: RoomAvailabilitySummary;
 }
 
+/** Partial shape returned by GET /rooms/:id/availability */
+export type ApiRoomAvailabilityData = Partial<
+  Omit<RoomAvailability, 'room'> & { room?: Partial<RoomAvailability['room']> }
+>;
+
+export interface RoomAvailabilityContext {
+  idOrSlug: string;
+  title: string;
+  quantity?: number;
+  type?: string;
+}
+
+export function mapRoomAvailability(
+  raw: ApiRoomAvailabilityData,
+  context?: RoomAvailabilityContext,
+): RoomAvailability {
+  const bookedDates = raw.bookedDates ?? [];
+  const blockedDates = raw.blockedDates ?? [];
+  const room = {
+    _id: raw.room?._id,
+    id: raw.room?.id ?? raw.room?._id ?? context?.idOrSlug,
+    title: raw.room?.title ?? context?.title ?? '',
+    slug: raw.room?.slug ?? context?.idOrSlug ?? '',
+    type: raw.room?.type ?? context?.type ?? '',
+    quantity: raw.room?.quantity ?? context?.quantity ?? 1,
+  };
+
+  return {
+    room,
+    booked: raw.booked ?? [],
+    blocked: raw.blocked ?? [],
+    bookedDates,
+    bookingBookedDates: raw.bookingBookedDates,
+    blockedDates,
+    partiallyBookedDates: raw.partiallyBookedDates,
+    availableDates: raw.availableDates ?? [],
+    occupancyByDate: raw.occupancyByDate,
+    summary: raw.summary,
+  };
+}
+
+export function mergeBlockedDatesIntoAvailability(
+  availability: RoomAvailability,
+  blockedData: Pick<RoomBlockedDatesData, 'blocked' | 'blockedDates'> | null | undefined,
+): RoomAvailability {
+  if (!blockedData) return availability;
+  return {
+    ...availability,
+    blocked: blockedData.blocked?.length ? blockedData.blocked : availability.blocked ?? [],
+    blockedDates: blockedData.blockedDates?.length
+      ? blockedData.blockedDates
+      : availability.blockedDates ?? [],
+  };
+}
+
 export function unwrapApiData<T>(body: unknown): T {
   if (body && typeof body === 'object' && 'data' in body) {
     return (body as { data: T }).data;
