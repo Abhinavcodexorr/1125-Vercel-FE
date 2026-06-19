@@ -85,9 +85,33 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
                 <label>Guests *</label>
                 <input type="number" formControlName="guests" min="1" />
               </div>
-              <div class="form-group compact field-short">
+              <div class="form-group compact field-quantity">
                 <label>Quantity</label>
-                <input type="number" formControlName="quantity" placeholder="1" />
+                <div class="quantity-stepper">
+                  <button
+                    type="button"
+                    class="stepper-btn"
+                    (click)="adjustQuantity(-1)"
+                    [disabled]="(form.controls.quantity.value ?? 1) <= 1"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    formControlName="quantity"
+                    min="1"
+                    (blur)="clampQuantity()"
+                  />
+                  <button
+                    type="button"
+                    class="stepper-btn"
+                    (click)="adjustQuantity(1)"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div class="form-group compact field-price">
                 <label>Price / night *</label>
@@ -310,6 +334,77 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       flex-shrink: 0;
     }
 
+    .field-quantity {
+      width: 120px;
+      flex-shrink: 0;
+    }
+
+    .quantity-stepper {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .quantity-stepper input {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      border: none;
+      border-radius: 0;
+      text-align: center;
+      padding: 0.625rem 0.25rem;
+      font-size: 0.875rem;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .quantity-stepper input::-webkit-outer-spin-button,
+    .quantity-stepper input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .quantity-stepper input:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(124, 165, 200, 0.2);
+    }
+
+    .stepper-btn {
+      flex-shrink: 0;
+      width: 2rem;
+      border: none;
+      background: var(--primary-muted);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s ease;
+    }
+
+    .stepper-btn:first-child {
+      border-right: 1px solid var(--border-light);
+    }
+
+    .stepper-btn:last-child {
+      border-left: 1px solid var(--border-light);
+    }
+
+    .stepper-btn:hover:not(:disabled) {
+      background: var(--primary-light);
+    }
+
+    .stepper-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
     .field-price {
       width: 132px;
       flex-shrink: 0;
@@ -361,6 +456,12 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     :host .form-group.compact .input-with-symbol input {
       width: 100%;
       padding: 0.625rem 0.875rem 0.625rem 2rem;
+    }
+
+    :host .form-group.compact .quantity-stepper input {
+      padding: 0.625rem 0.25rem;
+      border: none;
+      box-shadow: none;
     }
 
     :host .form-group.compact .form-select,
@@ -643,6 +744,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       }
 
       .field-short,
+      .field-quantity,
       .field-price,
       .field-currency,
       .field-unit {
@@ -699,7 +801,7 @@ export class RoomFormComponent implements OnInit {
     title: ['', Validators.required],
     description: [''],
     guests: [2, [Validators.required, Validators.min(1)]],
-    quantity: this.fb.control<number | null>(null, Validators.min(1)),
+    quantity: [1, [Validators.required, Validators.min(1)]],
     price: [0, [Validators.required, Validators.min(0)]],
     size: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     unit: ['sq ft'],
@@ -726,7 +828,7 @@ export class RoomFormComponent implements OnInit {
             title: room.title,
             description: room.description,
             guests: room.guests,
-            quantity: room.quantity ?? null,
+            quantity: room.quantity ?? 1,
             price: room.price,
             size: room.size > 0 ? room.size : null,
             unit: normalizeUnit(room.unit),
@@ -801,6 +903,20 @@ export class RoomFormComponent implements OnInit {
       else next.add(key);
       return next;
     });
+  }
+
+  protected adjustQuantity(delta: number): void {
+    const control = this.form.controls.quantity;
+    const current = control.value ?? 1;
+    control.setValue(Math.max(1, current + delta));
+  }
+
+  protected clampQuantity(): void {
+    const control = this.form.controls.quantity;
+    const value = control.value;
+    if (value == null || Number.isNaN(value) || value < 1) {
+      control.setValue(1);
+    }
   }
 
   private applyAmenitiesFromRoom(amenities: RoomAmenity[]): void {
