@@ -1,3 +1,5 @@
+import { normalizeCurrencyCode } from '../constants/currencies';
+
 export interface BookingGuest {
   firstName: string;
   lastName: string;
@@ -153,7 +155,7 @@ export function mapBookingCalendarEntry(doc: ApiBookingCalendarItem): BookingCal
     title: doc.title,
     paymentStatus: doc.paymentStatus,
     totalAmount: doc.totalAmount,
-    currency: doc.currency,
+    currency: normalizeCurrencyCode(doc.currency),
   };
 }
 
@@ -301,7 +303,7 @@ export function mapApiBooking(doc: ApiBookingDocument): Booking {
     doc.totalPrice ??
     doc.payment?.amount ??
     0;
-  const currency = amounts?.currency ?? doc.currency ?? 'USD';
+  const currency = normalizeCurrencyCode(amounts?.currency ?? doc.currency);
   const adults = doc.adults ?? 0;
   const children = doc.children ?? 0;
   const numGuests =

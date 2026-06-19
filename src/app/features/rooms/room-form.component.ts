@@ -2,6 +2,11 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
+  CURRENCY_OPTIONS,
+  currencyDisplaySymbol,
+  normalizeCurrencyCode,
+} from '../../core/constants/currencies';
+import {
   findPredefinedAmenity,
   PREDEFINED_ROOM_AMENITIES,
 } from '../../core/constants/room-amenities';
@@ -115,7 +120,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
               </div>
               <div class="form-group compact field-price">
                 <label>Price / night *</label>
-                <div class="input-with-symbol">
+                <div class="input-with-symbol" [class.symbol-wide]="priceSymbol().length > 1">
                   <span class="symbol">{{ priceSymbol() }}</span>
                   <input type="number" formControlName="price" min="0" />
                 </div>
@@ -458,6 +463,10 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       padding: 0.625rem 0.875rem 0.625rem 2rem;
     }
 
+    :host .form-group.compact .input-with-symbol.symbol-wide input {
+      padding-left: 2.75rem;
+    }
+
     :host .form-group.compact .quantity-stepper input {
       padding: 0.625rem 0.25rem;
       border: none;
@@ -771,10 +780,7 @@ export class RoomFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  protected readonly currencyOptions = [
-    { code: 'USD', label: 'US Dollar', symbol: '$' },
-    { code: 'GHS', label: 'Ghana Cedi', symbol: '₵' },
-  ] as const;
+  protected readonly currencyOptions = CURRENCY_OPTIONS;
 
   protected readonly unitOptions = [
     { value: 'sq ft', label: 'sq ft' },
@@ -832,11 +838,11 @@ export class RoomFormComponent implements OnInit {
             price: room.price,
             size: room.size > 0 ? room.size : null,
             unit: normalizeUnit(room.unit),
-            currency: room.currency || 'USD',
+            currency: normalizeCurrencyCode(room.currency),
             isActive: room.isActive,
           });
           this.applyAmenitiesFromRoom(room.amenities);
-          this.syncPriceSymbol(room.currency || 'USD');
+          this.syncPriceSymbol(normalizeCurrencyCode(room.currency));
           this.images.set([...room.images].sort((a, b) => a.order - b.order));
           this.roomIdOrSlug = room.id || room.slug;
           this.loading.set(false);
@@ -967,9 +973,7 @@ export class RoomFormComponent implements OnInit {
   }
 
   private syncPriceSymbol(code: string): void {
-    const symbol =
-      this.currencyOptions.find((option) => option.code === code)?.symbol ?? '$';
-    this.priceSymbol.set(symbol);
+    this.priceSymbol.set(currencyDisplaySymbol(code));
   }
 
   save(): void {
@@ -987,7 +991,7 @@ export class RoomFormComponent implements OnInit {
       type: raw.type.trim(),
       description: raw.description,
       price: raw.price,
-      currency: raw.currency.trim().toUpperCase(),
+      currency: normalizeCurrencyCode(raw.currency),
       guests: raw.guests,
       quantity: raw.quantity ?? 1,
       size: raw.size ?? 1,

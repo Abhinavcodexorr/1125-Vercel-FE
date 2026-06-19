@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -7,7 +7,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
 @Component({
   selector: 'app-dashboard-stats',
   standalone: true,
-  imports: [CurrencyPipe],
+  imports: [AppCurrencyPipe],
   template: `
     @if (loading()) {
       <div class="stats-loading">
@@ -54,7 +54,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
           <div class="stat-copy">
             <p class="stat-label">Total Revenue</p>
             <p class="stat-value revenue">
-              {{ stats().totalRevenue | currency: 'GHS':'symbol':'1.2-2' }}
+              {{ stats().totalRevenue | appCurrency: 'GHS':'1.2-2' }}
             </p>
           </div>
         </article>

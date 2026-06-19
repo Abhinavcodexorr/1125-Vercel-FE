@@ -1,4 +1,5 @@
-import { CurrencyPipe, DatePipe, UpperCasePipe } from '@angular/common';
+import { DatePipe, UpperCasePipe } from '@angular/common';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -15,7 +16,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
 @Component({
   selector: 'app-bookings',
   standalone: true,
-  imports: [PageHeaderComponent, EmptyStateComponent, CurrencyPipe, DatePipe, UpperCasePipe],
+  imports: [PageHeaderComponent, EmptyStateComponent, AppCurrencyPipe, DatePipe, UpperCasePipe],
   template: `
     <app-page-header [title]="pageTitle()" [showEyebrow]="false">
       <button
@@ -106,7 +107,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
                     <small>{{ b.adults ?? 0 }} adults · {{ b.children ?? 0 }} children</small>
                   }
                 </td>
-                <td>{{ b.grandTotal | currency: b.currency || 'USD':'symbol':'1.0-0' }}</td>
+                <td>{{ b.grandTotal | appCurrency: b.currency }}</td>
                 <td>
                   <span class="pay-method">{{ (b.payment.type || b.payment.method) | uppercase }}</span>
                   <small

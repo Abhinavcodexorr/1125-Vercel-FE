@@ -1,4 +1,5 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
@@ -28,7 +29,7 @@ interface CalendarMonth {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, DashboardStatsComponent],
+  imports: [PageHeaderComponent, AppCurrencyPipe, DatePipe, DashboardStatsComponent],
   template: `
     <app-page-header
       title="Dashboard"
@@ -188,7 +189,7 @@ interface CalendarMonth {
                           <div class="detail-item detail-amount">
                             <dt>Amount</dt>
                             <dd>
-                              {{ b.totalAmount | currency: b.currency || 'USD':'symbol':'1.0-0' }}
+                              {{ b.totalAmount | appCurrency: b.currency }}
                               <span class="paid-badge">Paid</span>
                             </dd>
                           </div>

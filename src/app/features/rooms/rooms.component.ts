@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminRoom } from '../../core/models/room.model';
@@ -18,7 +18,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
     EmptyStateComponent,
     StatusBadgeComponent,
     RouterLink,
-    CurrencyPipe,
+    AppCurrencyPipe,
     RoomAvailabilityModalComponent,
   ],
   template: `
@@ -69,7 +69,7 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
                 <span>{{ room.guests }} guests</span>
                 <span>{{ room.quantity }} unit{{ room.quantity === 1 ? '' : 's' }}</span>
                 <span>{{ room.size }} {{ room.unit }}</span>
-                <span>{{ room.price | currency: room.currency || 'USD':'symbol':'1.0-0' }}/night</span>
+                <span>{{ room.price | appCurrency: room.currency }}/night</span>
               </div>
 
               <div class="actions">

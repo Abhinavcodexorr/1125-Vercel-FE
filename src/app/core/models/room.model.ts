@@ -1,3 +1,5 @@
+import { normalizeCurrencyCode } from '../constants/currencies';
+
 export interface RoomAmenity {
   key?: string;
   name: string;
@@ -84,7 +86,7 @@ export function mapApiRoom(doc: ApiRoomDocument): AdminRoom {
     type: doc.type ?? '',
     description: doc.description ?? '',
     price: doc.price ?? 0,
-    currency: doc.currency ?? 'USD',
+    currency: normalizeCurrencyCode(doc.currency),
     guests: doc.guests ?? 1,
     quantity: doc.quantity ?? 1,
     size: doc.size ?? 0,
