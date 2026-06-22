@@ -11,13 +11,13 @@ import { BookingApiService } from '../../core/services/booking-api.service';
   template: `
     @if (loading()) {
       <div class="stats-loading">
-        @for (item of [1, 2, 3]; track item) {
+        @for (item of [1, 2, 3, 4]; track item) {
           <div class="skeleton-card"></div>
         }
       </div>
     } @else {
       <section class="stats-strip">
-        <article class="stat-card card bookings">
+        <article class="stat-card card total">
           <div class="stat-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
               <rect x="4" y="5" width="16" height="15" rx="2" />
@@ -25,8 +25,21 @@ import { BookingApiService } from '../../core/services/booking-api.service';
             </svg>
           </div>
           <div class="stat-copy">
-            <p class="stat-label">Rooms Booking</p>
+            <p class="stat-label">Total Bookings</p>
             <p class="stat-value">{{ stats().totalBookings }}</p>
+          </div>
+        </article>
+
+        <article class="stat-card card complete">
+          <div class="stat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+          </div>
+          <div class="stat-copy">
+            <p class="stat-label">Complete Bookings</p>
+            <p class="stat-value">{{ stats().completedBookings }}</p>
           </div>
         </article>
 
@@ -38,7 +51,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
             </svg>
           </div>
           <div class="stat-copy">
-            <p class="stat-label">Rooms Cancelled</p>
+            <p class="stat-label">Cancelled Bookings</p>
             <p class="stat-value muted">{{ stats().cancelledBookings }}</p>
           </div>
         </article>
@@ -65,7 +78,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
     .stats-strip,
     .stats-loading {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
@@ -79,7 +92,8 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       min-height: 6.5rem;
     }
 
-    .stat-card.bookings { border-left-color: #2563eb; }
+    .stat-card.total { border-left-color: #2563eb; }
+    .stat-card.complete { border-left-color: #7c3aed; }
     .stat-card.cancelled { border-left-color: #94a3b8; }
     .stat-card.revenue { border-left-color: #16a34a; }
 
@@ -98,9 +112,14 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       height: 1.5rem;
     }
 
-    .bookings .stat-icon {
+    .total .stat-icon {
       background: #dbeafe;
       color: #2563eb;
+    }
+
+    .complete .stat-icon {
+      background: #ede9fe;
+      color: #7c3aed;
     }
 
     .cancelled .stat-icon {
@@ -161,7 +180,14 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       100% { background-position: -100% 0; }
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1200px) {
+      .stats-strip,
+      .stats-loading {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
       .stats-strip,
       .stats-loading {
         grid-template-columns: 1fr;
@@ -179,6 +205,7 @@ export class DashboardStatsComponent implements OnInit {
 
     return {
       totalBookings: statistics?.totalBookings ?? 0,
+      completedBookings: statistics?.completedBookings ?? 0,
       cancelledBookings: statistics?.cancelledBookings ?? 0,
       totalRevenue: statistics?.totalRevenue ?? 0,
     };

@@ -201,6 +201,47 @@
   scrollbar-color: var(--primary-light) transparent;
 }
 
+.list-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+
+.list-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: min(62vh, calc(100dvh - var(--header-height) - 15rem));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.pagination-meta {
+  white-space: nowrap;
+}
+
+.pagination-count {
+  color: var(--text-muted);
+}
+
 .table-wrap::-webkit-scrollbar {
   height: 8px;
   width: 8px;
@@ -412,6 +453,18 @@ td small {
   .table-wrap {
     border-radius: var(--radius-sm);
   }
+
+  .list-scroll {
+    max-height: min(50vh, calc(100dvh - var(--header-height) - 12rem));
+  }
+
+  .pagination {
+    flex-direction: column;
+  }
+
+  .pagination .btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -429,10 +482,19 @@ app-subscribers,
 app-categories,
 app-category-form,
 app-room-form {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  min-height: 0;
+}
+
+app-bookings,
+app-subscribers,
+app-subadmins {
+  min-height: calc(100dvh - var(--header-height) - 4.5rem);
+  max-height: calc(100dvh - var(--header-height) - 4.5rem);
 }
 
 @media (max-width: 640px) {

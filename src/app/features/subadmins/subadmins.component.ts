@@ -1,15 +1,16 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { SubAdmin } from '../../core/models/auth.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { PaginationBarComponent } from '../../shared/components/pagination-bar/pagination-bar.component';
 
 @Component({
   selector: 'app-subadmins',
   standalone: true,
-  imports: [PageHeaderComponent, EmptyStateComponent, ReactiveFormsModule],
+  imports: [PageHeaderComponent, EmptyStateComponent, PaginationBarComponent, ReactiveFormsModule],
   template: `
     <app-page-header title="Sub-admins" subtitle="Manage admin users with limited access." />
 
@@ -55,59 +56,70 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
         } @else if (subadmins().length === 0) {
           <app-empty-state icon="👤" title="No sub-admins" message="Create a sub-admin to delegate access." />
         } @else {
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (admin of subadmins(); track admin.id) {
+          <div class="list-shell">
+            <div class="table-wrap list-scroll">
+              <table>
+                <thead>
                   <tr>
-                    <td>{{ admin.name }}</td>
-                    <td>{{ admin.email }}</td>
-                    <td>
-                      <span class="badge-status" [class]="admin.isBlocked ? 'badge-inactive' : 'badge-active'">
-                        {{ admin.isBlocked ? 'Blocked' : 'Active' }}
-                      </span>
-                    </td>
-                    <td class="actions-cell">
-                      @if (admin.isBlocked) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary btn-sm"
-                          [disabled]="actionId() === admin.id"
-                          (click)="unblock(admin)"
-                        >
-                          Unblock
-                        </button>
-                      } @else {
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-sm"
-                          [disabled]="actionId() === admin.id"
-                          (click)="block(admin)"
-                        >
-                          Block
-                        </button>
-                      }
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        [disabled]="actionId() === admin.id"
-                        (click)="remove(admin)"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (admin of paginatedSubadmins(); track admin.id) {
+                    <tr>
+                      <td>{{ admin.name }}</td>
+                      <td>{{ admin.email }}</td>
+                      <td>
+                        <span class="badge-status" [class]="admin.isBlocked ? 'badge-inactive' : 'badge-active'">
+                          {{ admin.isBlocked ? 'Blocked' : 'Active' }}
+                        </span>
+                      </td>
+                      <td class="actions-cell">
+                        @if (admin.isBlocked) {
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            [disabled]="actionId() === admin.id"
+                            (click)="unblock(admin)"
+                          >
+                            Unblock
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="btn btn-ghost btn-sm"
+                            [disabled]="actionId() === admin.id"
+                            (click)="block(admin)"
+                          >
+                            Block
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-sm"
+                          [disabled]="actionId() === admin.id"
+                          (click)="remove(admin)"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <app-pagination-bar
+              [page]="page()"
+              [totalPages]="totalPages()"
+              [total]="subadmins().length"
+              [disabled]="loading()"
+              (previous)="prevPage()"
+              (next)="nextPage()"
+            />
           </div>
         }
       </section>
@@ -139,8 +151,15 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
       margin-bottom: 1rem;
     }
 
-    .panel-head h2 {
-      margin: 0;
+    .list-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .list-shell {
+      flex: 1;
+      min-height: 0;
     }
 
     @media (max-width: 900px) {
@@ -172,6 +191,18 @@ export class SubadminsComponent implements OnInit {
   protected readonly actionId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  protected readonly page = signal(1);
+  protected readonly pageSize = 10;
+
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.subadmins().length / this.pageSize)),
+  );
+
+  protected readonly paginatedSubadmins = computed(() => {
+    const currentPage = Math.min(this.page(), this.totalPages());
+    const start = (currentPage - 1) * this.pageSize;
+    return this.subadmins().slice(start, start + this.pageSize);
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     name: [''],
@@ -189,6 +220,7 @@ export class SubadminsComponent implements OnInit {
     this.auth.listSubAdmins().subscribe({
       next: (items) => {
         this.subadmins.set(items);
+        this.page.set(1);
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -196,6 +228,16 @@ export class SubadminsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  protected prevPage(): void {
+    if (this.page() <= 1) return;
+    this.page.update((p) => p - 1);
+  }
+
+  protected nextPage(): void {
+    if (this.page() >= this.totalPages()) return;
+    this.page.update((p) => p + 1);
   }
 
   protected create(): void {

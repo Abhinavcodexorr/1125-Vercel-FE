@@ -150,9 +150,9 @@ interface NavItem {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.125rem 1rem 1rem;
+      padding: 0.875rem 0.75rem 0.75rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      min-height: 72px;
+      min-height: 64px;
     }
 
     .brand-link {
@@ -164,7 +164,7 @@ interface NavItem {
 
     .brand-logo {
       width: 100%;
-      max-width: 132px;
+      max-width: 108px;
       height: auto;
       display: block;
       filter: drop-shadow(0 2px 8px rgba(26, 43, 60, 0.12));
@@ -183,13 +183,13 @@ interface NavItem {
     }
 
     .brand-mark img {
-      width: 42px;
+      width: 36px;
       height: auto;
     }
 
     nav {
       flex: 1;
-      padding: 1rem 0.75rem 1.25rem;
+      padding: 0.75rem 0.5rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.375rem;
@@ -219,12 +219,12 @@ interface NavItem {
     .nav-link {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.5rem;
-      border-radius: 12px;
+      gap: 0.625rem;
+      padding: 0.4375rem 0.375rem;
+      border-radius: 10px;
       color: rgba(255, 255, 255, 0.94);
       font-weight: 500;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       transition: all var(--transition);
       border: 1px solid transparent;
     }
@@ -253,9 +253,9 @@ interface NavItem {
     }
 
     .icon-wrap {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -272,9 +272,9 @@ interface NavItem {
     .nav-group {
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
-      padding: 0.375rem 0.5rem 0.625rem;
-      border-radius: 14px;
+      gap: 0.25rem;
+      padding: 0.3125rem 0.375rem 0.5rem;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -287,11 +287,11 @@ interface NavItem {
     .nav-group-head {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.375rem 0.25rem;
+      gap: 0.625rem;
+      padding: 0.3125rem 0.125rem;
       color: rgba(255, 255, 255, 0.92);
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
     }
 
     .nav-group-head .icon-wrap {
@@ -301,21 +301,21 @@ interface NavItem {
     .nav-sub-list {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      margin-left: 1rem;
-      padding-left: 0.875rem;
+      gap: 0.1875rem;
+      margin-left: 0.75rem;
+      padding-left: 0.625rem;
       border-left: 2px solid rgba(255, 255, 255, 0.18);
     }
 
     .nav-sub {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
-      padding: 0.5rem 0.625rem;
-      border-radius: 10px;
+      gap: 0.5rem;
+      padding: 0.4375rem 0.5rem;
+      border-radius: 8px;
       color: rgba(255, 255, 255, 0.86);
       font-weight: 500;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       transition: all var(--transition);
     }
 
@@ -346,8 +346,8 @@ interface NavItem {
     }
 
     .nav-icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
     }
 

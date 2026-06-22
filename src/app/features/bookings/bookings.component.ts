@@ -10,13 +10,15 @@ import { BookingApiService } from '../../core/services/booking-api.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { PaginationBarComponent } from '../../shared/components/pagination-bar/pagination-bar.component';
 
 const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
+const PAGE_SIZE = 15;
 
 @Component({
   selector: 'app-bookings',
   standalone: true,
-  imports: [PageHeaderComponent, EmptyStateComponent, AppCurrencyPipe, DatePipe, UpperCasePipe],
+  imports: [PageHeaderComponent, EmptyStateComponent, PaginationBarComponent, AppCurrencyPipe, DatePipe, UpperCasePipe],
   template: `
     <app-page-header [title]="pageTitle()" [showEyebrow]="false">
       <button
@@ -45,50 +47,51 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
       @if (searchQuery()) {
         <button type="button" class="btn btn-ghost btn-sm" (click)="clearSearch()">Clear</button>
       }
-      <span class="result-count filter-spacer">{{ visibleBookings().length }} of {{ sectionBookings().length }}</span>
+      <span class="result-count filter-spacer">{{ filteredBookings().length }} total</span>
     </div>
 
     @if (bookingApi.loading() && bookingApi.bookings().length === 0) {
-      <app-empty-state icon="☰" title="Loading bookings…" message="Fetching reservations from the server." />
+      <app-empty-state icon="☰" title="Loading bookings…" />
     } @else if (sectionBookings().length === 0) {
       <app-empty-state icon="☰" [title]="emptyTitle()" [message]="emptyMessage()" />
-    } @else if (visibleBookings().length === 0) {
+    } @else if (filteredBookings().length === 0) {
       <app-empty-state
         icon="⌕"
         title="No matching bookings"
         message="Try a different guest name, email, room, or booking reference."
       />
     } @else {
-      <div class="table-wrap bookings-table">
-        <table>
-          <thead>
-            <tr>
-              <th class="col-sticky-left">Guest</th>
-              <th>Type</th>
-              <th>Stay</th>
-              <th>Dates</th>
-              <th>Guests</th>
-              <th>Total</th>
-              <th>Payment</th>
-              <th>Status</th>
-              @if (showActionsColumn()) {
-                <th class="col-sticky-right">Actions</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (b of visibleBookings(); track b.id) {
-              <tr [class.row-cancelled]="b.status === 'cancelled'">
-                <td class="col-sticky-left">
-                  <strong>{{ b.guest.firstName }} {{ b.guest.lastName }}</strong>
-                  <small>{{ b.guest.email }}</small>
-                  @if (b.guest.mobileNumber) {
-                    <small>{{ b.guest.mobileNumber }}</small>
-                  }
-                  @if (b.bookingReference) {
-                    <small>#{{ b.bookingReference }}</small>
-                  }
-                </td>
+      <div class="list-shell">
+        <div class="table-wrap list-scroll bookings-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Guest</th>
+                <th>Type</th>
+                <th>Stay</th>
+                <th>Dates</th>
+                <th>Guests</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
+                @if (showActionsColumn()) {
+                  <th>Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of paginatedBookings(); track b.id) {
+                <tr [class.row-cancelled]="b.status === 'cancelled'">
+                  <td>
+                    <strong>{{ b.guest.firstName }} {{ b.guest.lastName }}</strong>
+                    <small>{{ b.guest.email }}</small>
+                    @if (b.guest.mobileNumber) {
+                      <small>{{ b.guest.mobileNumber }}</small>
+                    }
+                    @if (b.bookingReference) {
+                      <small>#{{ b.bookingReference }}</small>
+                    }
+                  </td>
                 <td>
                   {{ b.bookingType || b.snapshot.categoryName }}
                   <small>{{ b.snapshot.categoryName }}</small>
@@ -121,7 +124,7 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
                   <span class="badge-status" [class]="statusClass(b.status)">{{ statusLabel(b.status) }}</span>
                 </td>
                 @if (showActionsColumn()) {
-                  <td class="actions-cell col-sticky-right">
+                  <td class="actions-cell">
                     @if (section() === 'incomplete') {
                       <button
                         type="button"
@@ -145,136 +148,47 @@ const SECTIONS: BookingSection[] = ['incomplete', 'complete', 'cancelled'];
               </tr>
             }
           </tbody>
-        </table>
+          </table>
+        </div>
+
+        <app-pagination-bar
+          [page]="page()"
+          [totalPages]="totalPages()"
+          [total]="filteredBookings().length"
+          [disabled]="bookingApi.loading()"
+          (previous)="prevPage()"
+          (next)="nextPage()"
+        />
       </div>
     }
   `,
   styles: `
     :host {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
     }
 
-    .bookings-table {
-      max-height: min(70vh, calc(100dvh - var(--header-height) - 15rem));
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      max-width: 100%;
-      width: 100%;
+    .filter-bar {
+      flex-shrink: 0;
     }
 
     .bookings-table table {
-      width: max-content;
-      min-width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
+      width: 100%;
+      min-width: 56rem;
+      border-collapse: collapse;
     }
 
     .bookings-table th,
     .bookings-table td {
-      min-width: 7.5rem;
-      white-space: nowrap;
+      min-width: 6.5rem;
+      vertical-align: top;
     }
 
-    .bookings-table th.col-sticky-left,
-    .bookings-table td.col-sticky-left {
-      min-width: 11rem;
-      max-width: 14rem;
-      white-space: normal;
-    }
-
-    .bookings-table th.col-sticky-right,
-    .bookings-table td.col-sticky-right {
-      min-width: 10.5rem;
-    }
-
-    .bookings-table th {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    .bookings-table .col-sticky-left {
-      position: sticky;
-      left: 0;
-      z-index: 1;
-      background: var(--white);
-      box-shadow: 1px 0 0 var(--border-light);
-    }
-
-    .bookings-table th.col-sticky-left {
-      z-index: 4;
-      background: linear-gradient(180deg, var(--primary-muted) 0%, #eef4f9 100%);
-    }
-
-    .bookings-table .col-sticky-right {
-      position: sticky;
-      right: 0;
-      z-index: 1;
-      background: var(--white);
-      box-shadow: -1px 0 0 var(--border-light);
-    }
-
-    .bookings-table th.col-sticky-right {
-      z-index: 4;
-      background: linear-gradient(180deg, var(--primary-muted) 0%, #eef4f9 100%);
-    }
-
-    .bookings-table tbody tr:hover .col-sticky-left,
-    .bookings-table tbody tr:hover .col-sticky-right {
-      background: #e8f0f6;
-    }
-
-    @media (max-width: 768px) {
-      .bookings-table {
-        max-height: min(55vh, calc(100dvh - var(--header-height) - 11rem));
-        border-radius: var(--radius-sm);
-      }
-
-      .bookings-table th,
-      .bookings-table td {
-        min-width: 5.5rem;
-        padding: 0.625rem 0.75rem;
-        font-size: 0.8125rem;
-        white-space: normal;
-      }
-
-      .bookings-table th.col-sticky-left,
-      .bookings-table td.col-sticky-left,
-      .bookings-table th.col-sticky-right,
-      .bookings-table td.col-sticky-right {
-        position: static;
-        box-shadow: none;
-        min-width: 5.5rem;
-        max-width: none;
-      }
-
-      .bookings-table .actions-cell {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.375rem;
-        min-width: 7rem;
-      }
-
-      .bookings-table .actions-cell .btn {
-        width: 100%;
-        white-space: nowrap;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .bookings-table {
-        max-height: min(50vh, calc(100dvh - var(--header-height) - 10rem));
-      }
-
-      .bookings-table th,
-      .bookings-table td {
-        min-width: 4.75rem;
-        padding: 0.5rem 0.625rem;
-        font-size: 0.75rem;
-      }
+    .bookings-table th:first-child,
+    .bookings-table td:first-child {
+      min-width: 10rem;
     }
 
     .pay-method {
@@ -316,6 +230,8 @@ export class BookingsComponent implements OnInit {
 
   protected readonly actionId = signal<string | null>(null);
   protected readonly searchQuery = signal('');
+  protected readonly page = signal(1);
+  protected readonly pageSize = PAGE_SIZE;
 
   protected readonly section = toSignal(
     this.route.paramMap.pipe(
@@ -330,7 +246,7 @@ export class BookingsComponent implements OnInit {
   /** Bookings returned by GET /booking?filter= for the active tab */
   protected readonly sectionBookings = computed(() => this.bookingApi.bookings());
 
-  protected readonly visibleBookings = computed(() => {
+  protected readonly filteredBookings = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const list = this.sectionBookings();
     if (!query) return list;
@@ -338,10 +254,21 @@ export class BookingsComponent implements OnInit {
     return list.filter((booking) => this.matchesSearch(booking, query));
   });
 
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredBookings().length / this.pageSize)),
+  );
+
+  protected readonly paginatedBookings = computed(() => {
+    const currentPage = Math.min(this.page(), this.totalPages());
+    const start = (currentPage - 1) * this.pageSize;
+    return this.filteredBookings().slice(start, start + this.pageSize);
+  });
+
   ngOnInit(): void {
     this.refresh();
     this.route.paramMap.subscribe(() => {
       this.searchQuery.set('');
+      this.page.set(1);
       this.refresh();
     });
   }
@@ -361,10 +288,22 @@ export class BookingsComponent implements OnInit {
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchQuery.set(value);
+    this.page.set(1);
   }
 
   protected clearSearch(): void {
     this.searchQuery.set('');
+    this.page.set(1);
+  }
+
+  protected prevPage(): void {
+    if (this.page() <= 1) return;
+    this.page.update((p) => p - 1);
+  }
+
+  protected nextPage(): void {
+    if (this.page() >= this.totalPages()) return;
+    this.page.update((p) => p + 1);
   }
 
   protected guestSummary(booking: Booking): string {
@@ -454,9 +393,8 @@ export class BookingsComponent implements OnInit {
       case 'complete':
         return 'Paid reservations will appear here.';
       case 'cancelled':
-        return 'Cancelled reservations will appear here.';
       default:
-        return 'Bookings awaiting payment or confirmation will appear here.';
+        return '';
     }
   }
 

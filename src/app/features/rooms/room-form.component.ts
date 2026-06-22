@@ -97,7 +97,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
                     type="button"
                     class="stepper-btn"
                     (click)="adjustQuantity(-1)"
-                    [disabled]="(form.controls.quantity.value ?? 1) <= 1"
+                    [disabled]="form.controls.quantity.value <= 1"
                     aria-label="Decrease quantity"
                   >
                     −

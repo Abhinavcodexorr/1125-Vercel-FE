@@ -74,6 +74,7 @@ export interface PaymentBreakdownItem {
 
 export interface BookingStatistics {
   totalBookings: number;
+  completedBookings: number;
   pendingBookings: number;
   confirmedBookings: number;
   checkedInBookings: number;
@@ -388,15 +389,39 @@ function mapPaymentBreakdown(data: Record<string, unknown>): PaymentBreakdownIte
 
 export function mapBookingStatistics(data: Record<string, unknown>): BookingStatistics {
   const breakdown = (data['statusBreakdown'] as Record<string, unknown> | undefined) ?? {};
+  const totalBookings = Number(data['totalBookings'] ?? breakdown['totalBookings'] ?? 0);
+  const pendingBookings = Number(breakdown['pendingBookings'] ?? 0);
+  const cancelledBookings = Number(data['cancelledBookings'] ?? breakdown['cancelledBookings'] ?? 0);
+  const completedBookings =
+    readStatisticCount(data, breakdown, [
+      'completedBookings',
+      'completeBookings',
+      'paidBookings',
+    ]) ??
+    Math.max(0, totalBookings - cancelledBookings - pendingBookings);
+
   return {
-    totalBookings: Number(data['totalBookings'] ?? breakdown['totalBookings'] ?? 0),
-    pendingBookings: Number(breakdown['pendingBookings'] ?? 0),
+    totalBookings,
+    completedBookings,
+    pendingBookings,
     confirmedBookings: Number(breakdown['confirmedBookings'] ?? 0),
     checkedInBookings: Number(breakdown['checkedInBookings'] ?? 0),
     checkedOutBookings: Number(breakdown['checkedOutBookings'] ?? 0),
-    cancelledBookings: Number(data['cancelledBookings'] ?? breakdown['cancelledBookings'] ?? 0),
+    cancelledBookings,
     totalRevenue: Number(data['totalRevenue'] ?? breakdown['totalRevenue'] ?? 0),
     averageBookingValue: Number(breakdown['averageBookingValue'] ?? 0),
     paymentBreakdown: mapPaymentBreakdown(data),
   };
+}
+
+function readStatisticCount(
+  data: Record<string, unknown>,
+  breakdown: Record<string, unknown>,
+  keys: string[],
+): number | undefined {
+  for (const key of keys) {
+    if (data[key] != null) return Number(data[key]);
+    if (breakdown[key] != null) return Number(breakdown[key]);
+  }
+  return undefined;
 }

@@ -9,7 +9,9 @@ import { Component, input } from '@angular/core';
         <span class="icon">{{ icon() }}</span>
       </div>
       <h3>{{ title() }}</h3>
-      <p>{{ message() }}</p>
+      @if (message()) {
+        <p>{{ message() }}</p>
+      }
       <div class="empty-actions">
         <ng-content />
       </div>
@@ -82,5 +84,5 @@ import { Component, input } from '@angular/core';
 export class EmptyStateComponent {
   readonly icon = input('📋');
   readonly title = input('Nothing here yet');
-  readonly message = input('Get started by adding your first item.');
+  readonly message = input('');
 }

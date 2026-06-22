@@ -14,48 +14,42 @@
   *ngIf="api.loading() && api.list().subscribers.length === 0"
   icon="✉"
   title="Loading subscribers…"
-  message="Fetching subscriber list."
 ></app-empty-state>
 
 <app-empty-state
   *ngIf="!api.loading() && api.list().subscribers.length === 0"
   icon="✉"
   title="No subscribers"
-  message="Subscribers from the website will appear here."
 ></app-empty-state>
 
-<div class="table-wrap" *ngIf="api.list().subscribers.length > 0">
-  <table>
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Source</th>
-        <th>Subscribed</th>
-        <th>Created</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let s of api.list().subscribers; trackBy: trackById">
-        <td><strong>{{ s.email }}</strong></td>
-        <td>{{ s.source || '—' }}</td>
-        <td>{{ (s.subscribedAt || s.createdAt) | date: 'medium' }}</td>
-        <td>{{ s.createdAt | date: 'mediumDate' }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<div class="list-shell" *ngIf="api.list().subscribers.length > 0">
+  <div class="table-wrap list-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Source</th>
+          <th>Subscribed</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of api.list().subscribers; trackBy: trackById">
+          <td><strong>{{ s.email }}</strong></td>
+          <td>{{ s.source || '—' }}</td>
+          <td>{{ (s.subscribedAt || s.createdAt) | date: 'medium' }}</td>
+          <td>{{ s.createdAt | date: 'mediumDate' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-<div class="pagination" *ngIf="api.list().totalPages > 1">
-  <button type="button" class="btn btn-ghost btn-sm" (click)="prevPage()" [disabled]="page() <= 1 || api.loading()">
-    Previous
-  </button>
-  <span>Page {{ api.list().page }} of {{ api.list().totalPages }}</span>
-  <button
-    type="button"
-    class="btn btn-ghost btn-sm"
-    (click)="nextPage()"
-    [disabled]="page() >= api.list().totalPages || api.loading()"
-  >
-    Next
-  </button>
+  <app-pagination-bar
+    [page]="api.list().page"
+    [totalPages]="api.list().totalPages"
+    [total]="api.list().total"
+    [disabled]="api.loading()"
+    (previous)="prevPage()"
+    (next)="nextPage()"
+  />
 </div>

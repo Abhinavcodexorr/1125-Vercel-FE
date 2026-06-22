@@ -3,13 +3,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { SubscribeApiService } from '../../core/services/subscribe-api.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { PaginationBarComponent } from '../../shared/components/pagination-bar/pagination-bar.component';
 
 @Component({
   selector: 'app-subscribers',
   standalone: true,
-  imports: [PageHeaderComponent, EmptyStateComponent, DatePipe, NgIf, NgFor],
+  imports: [PageHeaderComponent, EmptyStateComponent, PaginationBarComponent, DatePipe, NgIf, NgFor],
   templateUrl: './subscribers.component.html',
-  styleUrl: './subscribers.component.scss',
 })
 export class SubscribersComponent implements OnInit {
   protected readonly api = inject(SubscribeApiService);
