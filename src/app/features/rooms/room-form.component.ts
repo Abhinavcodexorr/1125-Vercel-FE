@@ -125,6 +125,20 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
                   <input type="number" formControlName="price" min="0" />
                 </div>
               </div>
+              <div class="form-group compact field-price">
+                <label>Weekday price</label>
+                <div class="input-with-symbol" [class.symbol-wide]="priceSymbol().length > 1">
+                  <span class="symbol">{{ priceSymbol() }}</span>
+                  <input type="number" formControlName="wdPrice" min="0" />
+                </div>
+              </div>
+              <div class="form-group compact field-price">
+                <label>Weekend price</label>
+                <div class="input-with-symbol" [class.symbol-wide]="priceSymbol().length > 1">
+                  <span class="symbol">{{ priceSymbol() }}</span>
+                  <input type="number" formControlName="wePrice" min="0" />
+                </div>
+              </div>
               <div class="form-group compact field-currency">
                 <label>Currency *</label>
                 <select formControlName="currency" class="form-select">
@@ -809,6 +823,8 @@ export class RoomFormComponent implements OnInit {
     guests: [2, [Validators.required, Validators.min(1)]],
     quantity: [1, [Validators.required, Validators.min(1)]],
     price: [0, [Validators.required, Validators.min(0)]],
+    wdPrice: [0, [Validators.min(0)]],
+    wePrice: [0, [Validators.min(0)]],
     size: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     unit: ['sq ft'],
     currency: ['USD', Validators.required],
@@ -820,6 +836,7 @@ export class RoomFormComponent implements OnInit {
   ngOnInit(): void {
     this.syncPriceSymbol(this.form.controls.currency.value);
     this.form.controls.currency.valueChanges.subscribe((code) => this.syncPriceSymbol(code));
+    this.form.controls.price.valueChanges.subscribe((price) => this.syncDerivedPricesFromBase(price));
 
     const id = this.route.snapshot.paramMap.get('id');
 
@@ -836,6 +853,8 @@ export class RoomFormComponent implements OnInit {
             guests: room.guests,
             quantity: room.quantity ?? 1,
             price: room.price,
+            wdPrice: room.wdPrice,
+            wePrice: room.wePrice,
             size: room.size > 0 ? room.size : null,
             unit: normalizeUnit(room.unit),
             currency: normalizeCurrencyCode(room.currency),
@@ -976,6 +995,15 @@ export class RoomFormComponent implements OnInit {
     this.priceSymbol.set(currencyDisplaySymbol(code));
   }
 
+  /** On create, keep weekday/weekend in sync with base price until edited separately */
+  private syncDerivedPricesFromBase(price: number): void {
+    if (this.isEdit) return;
+    const wd = this.form.controls.wdPrice;
+    const we = this.form.controls.wePrice;
+    if (!wd.dirty) wd.setValue(price, { emitEvent: false });
+    if (!we.dirty) we.setValue(price, { emitEvent: false });
+  }
+
   save(): void {
     if (this.form.invalid || this.uploading()) return;
 
@@ -991,6 +1019,8 @@ export class RoomFormComponent implements OnInit {
       type: raw.type.trim(),
       description: raw.description,
       price: raw.price,
+      wdPrice: raw.wdPrice ?? raw.price,
+      wePrice: raw.wePrice ?? raw.price,
       currency: normalizeCurrencyCode(raw.currency),
       guests: raw.guests,
       quantity: raw.quantity ?? 1,

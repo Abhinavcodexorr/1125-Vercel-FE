@@ -20,6 +20,10 @@ export interface AdminRoom {
   type: string;
   description: string;
   price: number;
+  /** Weekday nightly rate; falls back to price when unset on older rooms */
+  wdPrice: number;
+  /** Weekend nightly rate; falls back to price when unset on older rooms */
+  wePrice: number;
   currency: string;
   guests: number;
   quantity: number;
@@ -39,6 +43,10 @@ export interface RoomCreatePayload {
   type: string;
   description?: string;
   price: number;
+  wdPrice?: number;
+  wePrice?: number;
+  weekdayPrice?: number;
+  weekendPrice?: number;
   currency: string;
   guests: number;
   quantity?: number;
@@ -64,6 +72,10 @@ export interface ApiRoomDocument {
   type?: string;
   description?: string;
   price?: number;
+  wdPrice?: number;
+  wePrice?: number;
+  weekdayPrice?: number;
+  weekendPrice?: number;
   currency?: string;
   guests?: number;
   quantity?: number;
@@ -77,15 +89,29 @@ export interface ApiRoomDocument {
   updatedAt?: string;
 }
 
+export function resolveRoomPrices(doc: ApiRoomDocument): {
+  price: number;
+  wdPrice: number;
+  wePrice: number;
+} {
+  const price = doc.price ?? 0;
+  const wdPrice = doc.wdPrice ?? doc.weekdayPrice ?? price;
+  const wePrice = doc.wePrice ?? doc.weekendPrice ?? price;
+  return { price, wdPrice, wePrice };
+}
+
 export function mapApiRoom(doc: ApiRoomDocument): AdminRoom {
   const id = doc.id ?? doc._id ?? '';
+  const { price, wdPrice, wePrice } = resolveRoomPrices(doc);
   return {
     id,
     title: doc.title ?? '',
     slug: doc.slug ?? '',
     type: doc.type ?? '',
     description: doc.description ?? '',
-    price: doc.price ?? 0,
+    price,
+    wdPrice,
+    wePrice,
     currency: normalizeCurrencyCode(doc.currency),
     guests: doc.guests ?? 1,
     quantity: doc.quantity ?? 1,

@@ -70,6 +70,8 @@ import { RoomAvailabilityModalComponent } from './room-availability-modal.compon
                 <span>{{ room.quantity }} unit{{ room.quantity === 1 ? '' : 's' }}</span>
                 <span>{{ room.size }} {{ room.unit }}</span>
                 <span>{{ room.price | appCurrency: room.currency }}/night</span>
+                <span>WD {{ room.wdPrice | appCurrency: room.currency }}</span>
+                <span>WE {{ room.wePrice | appCurrency: room.currency }}</span>
               </div>
 
               <div class="actions">
