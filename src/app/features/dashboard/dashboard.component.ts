@@ -170,6 +170,10 @@ interface CalendarMonth {
                           <dd>{{ guestCountLabel(b) }}</dd>
                         </div>
                         <div class="detail-item">
+                          <dt>Quantity</dt>
+                          <dd>{{ quantityLabel(b) }}</dd>
+                        </div>
+                        <div class="detail-item">
                           <dt>Special requests</dt>
                           <dd>{{ specialRequests(b) || '—' }}</dd>
                         </div>
@@ -841,6 +845,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (total == null) return '—';
 
     return `${total} guest${total === 1 ? '' : 's'}`;
+  }
+
+  protected quantityLabel(entry: BookingCalendarEntry): string {
+    const quantity = this.bookingDetails()[entry.id]?.quantity ?? entry.quantity;
+    if (quantity == null || quantity < 1) return '—';
+    return `${quantity} unit${quantity === 1 ? '' : 's'}`;
   }
 
   protected specialRequests(entry: BookingCalendarEntry): string | undefined {

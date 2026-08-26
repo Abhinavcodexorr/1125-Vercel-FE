@@ -47,7 +47,7 @@ const PAGE_SIZE = 15;
     }
 
     @if (bookingApi.loading() && bookingApi.bookings().length === 0) {
-      <app-shimmer-list [rows]="8" [columns]="8" />
+      <app-shimmer-list [rows]="8" [columns]="9" />
     } @else if (sectionBookings().length === 0) {
       <app-empty-state icon="☰" [title]="emptyTitle()" [message]="emptyMessage()" />
     } @else if (filteredBookings().length === 0) {
@@ -69,6 +69,7 @@ const PAGE_SIZE = 15;
                   <th>Nights</th>
                   <th>Customer details</th>
                   <th>Guests</th>
+                  <th>Quantity</th>
                   <th>Special requests</th>
                   <th>Amount</th>
                   <th class="col-center">Payment status</th>
@@ -107,6 +108,7 @@ const PAGE_SIZE = 15;
                       }
                     </td>
                     <td>{{ guestSummary(b) }}</td>
+                    <td class="qty-cell">{{ quantityLabel(b) }}</td>
                     <td class="requests-cell">{{ b.specialRequests || '-' }}</td>
                     <td class="amount-cell">
                       <span class="amount-code">{{ currencySymbol(b.currency) }}</span>
@@ -368,6 +370,12 @@ const PAGE_SIZE = 15;
       text-align: left;
     }
 
+    .qty-cell {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
     .amount-code {
       display: inline;
       margin-right: 0.25rem;
@@ -601,6 +609,11 @@ export class BookingsComponent implements OnInit {
 
   protected guestSummary(booking: Booking): string {
     return `${booking.numGuests} guest${booking.numGuests === 1 ? '' : 's'}`;
+  }
+
+  protected quantityLabel(booking: Booking): string {
+    const quantity = booking.quantity || 1;
+    return `${quantity} unit${quantity === 1 ? '' : 's'}`;
   }
 
   protected formatMobile(value?: string): string {

@@ -45,6 +45,7 @@ export interface Booking {
   adults?: number;
   children?: number;
   numGuests: number;
+  quantity: number;
   specialRequests?: string;
   grandTotal: number;
   currency?: string;
@@ -98,7 +99,16 @@ export interface ApiBookingCalendarItem {
     id?: string;
     name?: string;
     cabinType?: string;
+    quantity?: number;
   };
+  room?: {
+    id?: string;
+    name?: string;
+    quantity?: number;
+  };
+  quantity?: number;
+  units?: number;
+  numberOfRooms?: number;
   guest?: {
     firstName?: string;
     lastName?: string;
@@ -137,6 +147,7 @@ export interface BookingCalendarEntry {
   children?: number;
   nights?: number;
   numGuests?: number;
+  quantity?: number;
   specialRequests?: string;
   cabinType?: string;
   title?: string;
@@ -225,6 +236,7 @@ export function mapBookingCalendarEntry(doc: ApiBookingCalendarItem): BookingCal
     children: children || undefined,
     nights: countNights(doc.start, doc.end, doc.nights),
     numGuests,
+    quantity: doc.quantity ?? doc.units ?? doc.numberOfRooms ?? doc.room?.quantity ?? doc.cabin?.quantity,
     specialRequests: parseSpecialRequests(doc),
     cabinType: doc.cabin?.cabinType,
     title: doc.title,
@@ -308,6 +320,9 @@ export interface ApiBookingDocument {
   numberOfGuests?: number;
   numGuests?: number;
   guests?: number;
+  quantity?: number;
+  units?: number;
+  numberOfRooms?: number;
   specialRequests?: string;
   specialRequest?: string;
   requests?: string;
@@ -420,6 +435,7 @@ export function mapApiBooking(doc: ApiBookingDocument): Booking {
     adults: adults || undefined,
     children: children || undefined,
     numGuests,
+    quantity: doc.quantity ?? doc.units ?? doc.numberOfRooms ?? room?.quantity ?? 1,
     specialRequests: parseSpecialRequests(doc),
     grandTotal: amount,
     currency,
