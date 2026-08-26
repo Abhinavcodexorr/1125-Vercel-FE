@@ -56,6 +56,40 @@ import { Component, input } from '@angular/core';
           <path d="M6 20c.8-3 2.8-5 6-5s5.2 2 6 5" />
           <path d="M17 9h2.5M17 12h2" />
         }
+        @case ('pool') {
+          <path d="M4 16c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0" />
+          <path d="M4 20c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0" />
+          <path d="M7 7c0-1.7 1.3-3 3-3s3 1.3 3 3-3 4-3 4" />
+        }
+        @case ('ocean_view') {
+          <path d="M3 16c2.5-2 5.5-2 8 0 2.5 2 5.5 2 8 0" />
+          <path d="M4 8l4 3 4-5 4 4 4-2" />
+        }
+        @case ('private_deck') {
+          <path d="M4 14h16" />
+          <path d="M6 14v5M18 14v5" />
+          <path d="M4 19h16" />
+          <path d="M8 10l4-5 4 5" />
+        }
+        @case ('lounge_access') {
+          <path d="M5 14h14v3H5z" />
+          <path d="M7 14V11a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v3" />
+          <path d="M6 17v2M18 17v2" />
+        }
+        @case ('game_room') {
+          <path d="M7 15.5c-1.7 0-3-1.1-3-2.5S5.3 10.5 7 10.5h10c1.7 0 3 1.1 3 2.5s-1.3 2.5-3 2.5H7Z" />
+          <path d="M9 12.2v2.6M7.7 13.5h2.6" />
+          <circle cx="15.2" cy="12.6" r="0.7" fill="currentColor" stroke="none" />
+          <circle cx="16.8" cy="14.2" r="0.7" fill="currentColor" stroke="none" />
+        }
+        @case ('bed') {
+          <path d="M4 18V10a2 2 0 0 1 2-2h5a3 3 0 0 1 3 3v7" />
+          <path d="M14 18V12h4a2 2 0 0 1 2 2v4" />
+          <path d="M3 18h18" />
+        }
+        @case ('star') {
+          <path d="M12 4.5l1.8 3.7 4.1.6-3 2.9.7 4.1L12 14.8 8.4 15.8l.7-4.1-3-2.9 4.1-.6L12 4.5Z" />
+        }
         @default {
           <circle cx="12" cy="12" r="8" />
           <path d="M12 8v4l2.5 2.5" />

@@ -4,11 +4,12 @@ import { SubscribeApiService } from '../../core/services/subscribe-api.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PaginationBarComponent } from '../../shared/components/pagination-bar/pagination-bar.component';
+import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimmer-list.component';
 
 @Component({
   selector: 'app-subscribers',
   standalone: true,
-  imports: [PageHeaderComponent, EmptyStateComponent, PaginationBarComponent, DatePipe, NgIf, NgFor],
+  imports: [PageHeaderComponent, EmptyStateComponent, PaginationBarComponent, DatePipe, NgIf, NgFor, ShimmerListComponent],
   templateUrl: './subscribers.component.html',
 })
 export class SubscribersComponent implements OnInit {
@@ -40,6 +41,14 @@ export class SubscribersComponent implements OnInit {
     const meta = this.api.list();
     if (this.page() >= meta.totalPages) return;
     this.page.update((p) => p + 1);
+    this.load();
+  }
+
+  protected goToPage(page: number): void {
+    const meta = this.api.list();
+    const next = Math.min(meta.totalPages || 1, Math.max(1, page));
+    if (next === this.page()) return;
+    this.page.set(next);
     this.load();
   }
 

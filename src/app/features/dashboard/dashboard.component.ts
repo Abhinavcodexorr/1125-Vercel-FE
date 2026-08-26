@@ -4,7 +4,9 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import {
+  Booking,
   BookingCalendarEntry,
+  countNights,
   isPaidCalendarBooking,
 } from '../../core/models/booking.model';
 import { BookingApiService } from '../../core/services/booking-api.service';
@@ -43,9 +45,6 @@ interface CalendarMonth {
         <div>
           <h2>Booking calendar</h2>
           <p class="calendar-sub">Paid bookings — click a highlighted date for guest details</p>
-        </div>
-        <div class="calendar-actions">
-          <span class="month-chip">{{ monthBookedDays() }} booked days</span>
         </div>
       </div>
 
@@ -125,75 +124,78 @@ interface CalendarMonth {
               @for (b of selectedDayBookings(); track b.id) {
                 <li [class.expanded]="expandedBookingId() === b.id">
                   <button type="button" class="guest-row" (click)="toggleBooking(b.id)">
-                    <span class="guest-avatar">{{ guestInitials(b.roomTitle) }}</span>
+                    <span class="guest-avatar">{{ guestInitials(b.guestName) }}</span>
                     <span class="guest-summary">
-                      <span class="guest-name">{{ b.roomTitle }}</span>
-                      <span class="guest-room">{{ b.cabinType || b.title || '—' }}</span>
+                      <span class="guest-name">{{ b.guestName }}</span>
+                      <span class="guest-room">{{ roomType(b) }}</span>
                     </span>
                     <span class="chevron" [class.open]="expandedBookingId() === b.id">›</span>
                   </button>
                   <div class="guest-detail-wrap" [class.expanded]="expandedBookingId() === b.id">
                     <div class="guest-detail-inner">
+                      @if (detailsLoadingId() === b.id) {
+                        <p class="muted detail-loading">Loading booking details…</p>
+                      }
                       <dl class="detail-grid">
                         <div class="detail-item">
-                          <dt>Room</dt>
+                          <dt>Room type</dt>
+                          <dd>{{ roomType(b) }}</dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>Check-in</dt>
+                          <dd>{{ b.checkIn | date: 'MMM d, y' }}</dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>Check-out</dt>
+                          <dd>{{ b.checkOut | date: 'MMM d, y' }}</dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>No. of nights</dt>
+                          <dd>{{ nightCount(b) ?? '—' }}</dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>Customer details</dt>
                           <dd>
-                            {{ b.roomTitle }}
-                            @if (b.cabinType || b.title) {
-                              ({{ b.cabinType || b.title }})
+                            {{ customerName(b) }}
+                            @if (customerEmail(b)) {
+                              <small>{{ customerEmail(b) }}</small>
+                            }
+                            @if (customerPhone(b)) {
+                              <small>{{ formatMobile(customerPhone(b)) }}</small>
                             }
                           </dd>
                         </div>
-                        @if (b.bookingReference) {
-                          <div class="detail-item">
-                            <dt>Reference</dt>
-                            <dd>{{ b.bookingReference }}</dd>
-                          </div>
-                        }
-                        @if (b.cabinType) {
-                          <div class="detail-item">
-                            <dt>Type</dt>
-                            <dd>{{ b.cabinType }}</dd>
-                          </div>
-                        }
-                        @if (b.guestEmail) {
-                          <div class="detail-item">
-                            <dt>Email</dt>
-                            <dd>{{ b.guestEmail }}</dd>
-                          </div>
-                        }
-                        @if (b.guestMobile) {
-                          <div class="detail-item">
-                            <dt>Phone</dt>
-                            <dd>{{ b.guestMobile }}</dd>
-                          </div>
-                        }
                         <div class="detail-item">
-                          <dt>Stay</dt>
+                          <dt>No. of guests</dt>
+                          <dd>{{ guestCountLabel(b) }}</dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>Special requests</dt>
+                          <dd>{{ specialRequests(b) || '—' }}</dd>
+                        </div>
+                        <div class="detail-item detail-amount">
+                          <dt>Amount</dt>
                           <dd>
-                            {{ b.checkIn | date: 'MMM d, y' }} – {{ b.checkOut | date: 'MMM d, y' }}
+                            @if (amount(b) != null) {
+                              {{ amount(b) | appCurrency: currency(b) }}
+                            } @else {
+                              —
+                            }
                           </dd>
                         </div>
-                        @if (b.adults != null) {
-                          <div class="detail-item">
-                            <dt>Guests</dt>
-                            <dd>
-                              {{ b.adults }} adult{{ b.adults === 1 ? '' : 's' }}
-                              @if (b.children) {
-                                , {{ b.children }} child{{ b.children === 1 ? '' : 'ren' }}
-                              }
-                            </dd>
-                          </div>
-                        }
-                        @if (b.totalAmount != null) {
-                          <div class="detail-item detail-amount">
-                            <dt>Amount</dt>
-                            <dd>
-                              {{ b.totalAmount | appCurrency: b.currency }}
+                        <div class="detail-item">
+                          <dt>Payment status</dt>
+                          <dd>
+                            {{ paymentStatus(b) || '—' }}
+                            @if ((paymentStatus(b) ?? '').toLowerCase() === 'paid') {
                               <span class="paid-badge">Paid</span>
-                            </dd>
-                          </div>
-                        }
+                            }
+                          </dd>
+                        </div>
+                        <div class="detail-item">
+                          <dt>Booking reference</dt>
+                          <dd>{{ bookingReference(b) || '—' }}</dd>
+                        </div>
                       </dl>
                     </div>
                   </div>
@@ -233,22 +235,6 @@ interface CalendarMonth {
       margin: 0;
       font-size: 0.8125rem;
       color: var(--text-muted);
-    }
-
-    .calendar-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-shrink: 0;
-    }
-
-    .month-chip {
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      background: #fde8e8;
-      color: #b42318;
-      font-size: 0.75rem;
-      font-weight: 600;
     }
 
     .calendar-shell {
@@ -461,8 +447,8 @@ interface CalendarMonth {
 
     .popup {
       width: 100%;
-      max-width: 400px;
-      max-height: min(80vh, 520px);
+      max-width: 460px;
+      max-height: min(85vh, 640px);
       overflow: auto;
       background: var(--white);
       border-radius: var(--radius);
@@ -633,7 +619,7 @@ interface CalendarMonth {
 
     .detail-item {
       display: grid;
-      grid-template-columns: 5rem 1fr;
+      grid-template-columns: 7.5rem 1fr;
       gap: 0.5rem;
       align-items: start;
     }
@@ -653,6 +639,17 @@ interface CalendarMonth {
       color: var(--text);
       line-height: 1.4;
       word-break: break-word;
+    }
+
+    .detail-item dd small {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .detail-loading {
+      margin: 0 1.25rem 0.75rem 4.4rem;
     }
 
     .detail-amount dd {
@@ -729,6 +726,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   protected readonly calendarBookings = signal<BookingCalendarEntry[]>([]);
   protected readonly selectedDate = signal<string | null>(null);
   protected readonly expandedBookingId = signal<string | null>(null);
+  protected readonly detailsLoadingId = signal<string | null>(null);
+  private readonly bookingDetails = signal<Record<string, Booking>>({});
   private readonly calendarViewMonth = signal(monthIndex(new Date()));
 
   protected readonly paidCalendarBookings = computed(() =>
@@ -743,22 +742,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const date = this.selectedDate();
     if (!date) return [];
     return getBookingsForDate(date, this.paidCalendarBookings());
-  });
-
-  protected readonly monthBookedDays = computed(() => {
-    const booked = new Set<string>();
-    const monthStart = monthFromIndex(this.calendarViewMonth());
-    const year = monthStart.getFullYear();
-    const month = monthStart.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const key = dateKey(new Date(year, month, day));
-      if (getBookingsForDate(key, this.paidCalendarBookings()).length > 0) {
-        booked.add(key);
-      }
-    }
-    return booked.size;
   });
 
   ngOnInit(): void {
@@ -804,6 +787,98 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   toggleBooking(id: string): void {
     this.expandedBookingId.update((current) => (current === id ? null : id));
+    const next = this.expandedBookingId();
+    if (next) this.loadBookingDetails(next);
+  }
+
+  protected roomType(entry: BookingCalendarEntry): string {
+    const full = this.bookingDetails()[entry.id];
+    return (
+      full?.snapshot.categoryName ||
+      full?.bookingType ||
+      entry.cabinType ||
+      entry.roomTitle ||
+      '—'
+    );
+  }
+
+  protected nightCount(entry: BookingCalendarEntry): number | undefined {
+    const full = this.bookingDetails()[entry.id];
+    return countNights(
+      full?.checkIn ?? entry.checkIn,
+      full?.checkOut ?? entry.checkOut,
+      full?.nights ?? entry.nights,
+    );
+  }
+
+  protected customerName(entry: BookingCalendarEntry): string {
+    const full = this.bookingDetails()[entry.id];
+    if (full) {
+      return `${full.guest.firstName} ${full.guest.lastName}`.trim() || entry.guestName;
+    }
+    return entry.guestName;
+  }
+
+  protected customerEmail(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.guest.email || entry.guestEmail;
+  }
+
+  protected customerPhone(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.guest.mobileNumber || entry.guestMobile;
+  }
+
+  protected formatMobile(value?: string): string {
+    const raw = value?.trim();
+    if (!raw) return '';
+    return raw.startsWith('+') ? raw : `+${raw}`;
+  }
+
+  protected guestCountLabel(entry: BookingCalendarEntry): string {
+    const full = this.bookingDetails()[entry.id];
+    const adults = full?.adults ?? entry.adults;
+    const children = full?.children ?? entry.children;
+    const total = full?.numGuests ?? entry.numGuests ?? ((adults ?? 0) + (children ?? 0) || undefined);
+    if (total == null) return '—';
+
+    return `${total} guest${total === 1 ? '' : 's'}`;
+  }
+
+  protected specialRequests(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.specialRequests || entry.specialRequests;
+  }
+
+  protected amount(entry: BookingCalendarEntry): number | undefined {
+    return this.bookingDetails()[entry.id]?.grandTotal ?? entry.totalAmount;
+  }
+
+  protected currency(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.currency ?? entry.currency;
+  }
+
+  protected paymentStatus(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.payment.status || entry.paymentStatus;
+  }
+
+  protected bookingReference(entry: BookingCalendarEntry): string | undefined {
+    return this.bookingDetails()[entry.id]?.bookingReference || entry.bookingReference;
+  }
+
+  private loadBookingDetails(id: string): void {
+    if (this.bookingDetails()[id]) return;
+
+    this.detailsLoadingId.set(id);
+    this.bookingApi
+      .getOne(id)
+      .pipe(
+        catchError(() => of(null)),
+        finalize(() => {
+          if (this.detailsLoadingId() === id) this.detailsLoadingId.set(null);
+        }),
+      )
+      .subscribe((booking) => {
+        if (!booking) return;
+        this.bookingDetails.update((current) => ({ ...current, [id]: booking }));
+      });
   }
 
   clearSelectedDate(): void {
@@ -890,8 +965,8 @@ function buildCalendarMonth(monthStart: Date, entries: BookingCalendarEntry[]): 
     const bookingCount = bookingCountByDay.get(key) ?? 0;
     let status: DayStatus;
 
-    if (bookingCount > 0) status = 'booked';
-    else if (date < today) status = 'past';
+    if (date < today) status = 'past';
+    else if (bookingCount > 0) status = 'booked';
     else status = 'available';
 
     cells.push({

@@ -222,16 +222,21 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
   background: var(--white);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
+}
+
+.pagination .btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8125rem;
+  min-height: 0;
 }
 
 .pagination-meta {
@@ -274,7 +279,7 @@ th {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary);
+  color: #111111;
   background: linear-gradient(180deg, var(--primary-muted) 0%, #eef4f9 100%);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -340,8 +345,12 @@ td small {
 }
 
 .actions-cell {
-  display: flex;
-  gap: 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.actions-cell > * + * {
+  margin-left: 0.5rem;
 }
 
 .alert {
@@ -457,14 +466,6 @@ td small {
   .list-scroll {
     max-height: min(50vh, calc(100dvh - var(--header-height) - 12rem));
   }
-
-  .pagination {
-    flex-direction: column;
-  }
-
-  .pagination .btn {
-    width: 100%;
-  }
 }
 
 @media (max-width: 480px) {
@@ -478,6 +479,8 @@ app-bookings,
 app-rooms,
 app-dashboard,
 app-subadmins,
+app-subadmin-form,
+app-settings,
 app-subscribers,
 app-categories,
 app-category-form,
@@ -495,6 +498,22 @@ app-subscribers,
 app-subadmins {
   min-height: calc(100dvh - var(--header-height) - 4.5rem);
   max-height: calc(100dvh - var(--header-height) - 4.5rem);
+}
+
+app-bookings {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+app-bookings .list-shell,
+app-bookings .listing-card {
+  flex: 1;
+  min-height: 0;
+}
+
+app-bookings .list-scroll {
+  max-height: none;
 }
 
 @media (max-width: 640px) {
@@ -522,17 +541,6 @@ app-subadmins {
 
   app-dashboard .calendar-shell {
     padding: 0.75rem 0.5rem;
-  }
-
-  app-dashboard .calendar-actions {
-    flex-wrap: wrap;
-    width: 100%;
-  }
-
-  app-dashboard .month-chip {
-    flex: 1;
-    text-align: center;
-    min-width: 0;
   }
 
   app-dashboard .weekdays,
@@ -584,25 +592,6 @@ app-subadmins {
   app-rooms .room-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
-  }
-
-  app-rooms .actions .btn,
-  app-rooms .actions a.btn {
-    flex: 1 1 calc(50% - 0.25rem);
-    min-width: 0;
-  }
-
-  app-subadmins .layout {
-    grid-template-columns: 1fr;
-  }
-
-  app-subadmins .panel-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  app-subadmins .panel-head .btn {
-    width: 100%;
   }
 
   app-categories .cards {

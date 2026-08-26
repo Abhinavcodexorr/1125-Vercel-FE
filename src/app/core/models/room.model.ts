@@ -29,6 +29,7 @@ export interface AdminRoom {
   quantity: number;
   size: number;
   unit: string;
+  bedConfiguration: string;
   amenities: RoomAmenity[];
   images: RoomImage[];
   isActive: boolean;
@@ -52,6 +53,7 @@ export interface RoomCreatePayload {
   quantity?: number;
   size: number;
   unit?: string;
+  bedConfiguration?: string;
   amenities?: RoomAmenity[];
   images?: RoomImage[];
   isActive?: boolean;
@@ -81,6 +83,7 @@ export interface ApiRoomDocument {
   quantity?: number;
   size?: number;
   unit?: string;
+  bedConfiguration?: string;
   amenities?: RoomAmenity[];
   images?: RoomImage[];
   isActive?: boolean;
@@ -117,6 +120,7 @@ export function mapApiRoom(doc: ApiRoomDocument): AdminRoom {
     quantity: doc.quantity ?? 1,
     size: doc.size ?? 0,
     unit: doc.unit ?? 'sq ft',
+    bedConfiguration: doc.bedConfiguration ?? '',
     amenities: doc.amenities ?? [],
     images: doc.images ?? [],
     isActive: doc.isActive ?? true,
@@ -139,9 +143,11 @@ export function unwrapApiList<T>(body: unknown): T[] {
     if (Array.isArray(record['rooms'])) return record['rooms'] as T[];
     if (Array.isArray(record['bookings'])) return record['bookings'] as T[];
     if (Array.isArray(record['results'])) return record['results'] as T[];
+    if (Array.isArray(record['subAdmins'])) return record['subAdmins'] as T[];
     if (data && typeof data === 'object') {
       const nested = data as Record<string, unknown>;
       if (Array.isArray(nested['bookings'])) return nested['bookings'] as T[];
+      if (Array.isArray(nested['subAdmins'])) return nested['subAdmins'] as T[];
     }
   }
   return [];

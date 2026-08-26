@@ -38,7 +38,9 @@ import { ConfirmService } from '../../../core/services/confirm.service';
             </div>
 
             <h2 class="dialog-title" [id]="'confirm-title-' + dialog.id">{{ dialog.title }}</h2>
-            <p class="dialog-message" [id]="'confirm-message-' + dialog.id">{{ dialog.message }}</p>
+            @if (dialog.message) {
+              <p class="dialog-message" [id]="'confirm-message-' + dialog.id">{{ dialog.message }}</p>
+            }
           </div>
 
           <div class="dialog-actions">

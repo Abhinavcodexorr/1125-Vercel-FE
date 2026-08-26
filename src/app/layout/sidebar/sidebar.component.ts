@@ -25,11 +25,11 @@ interface NavItem {
       <div class="brand">
         @if (sidebar.isCollapsed()) {
           <a routerLink="/dashboard" class="brand-mark" title="1125 Beach Villa">
-            <img src="/logo-mark.svg" alt="1125" />
+            <img src="/logo-mark.png" alt="1125" />
           </a>
         } @else {
           <a routerLink="/dashboard" class="brand-link">
-            <img src="/logo.svg" alt="Eleven Twenty-Five Beach Villa" class="brand-logo" />
+            <img src="/logo.png" alt="Eleven Twenty-Five Beach Villa" class="brand-logo" />
           </a>
         }
       </div>
@@ -99,6 +99,14 @@ interface NavItem {
                       <rect x="3" y="5" width="18" height="14" rx="2" />
                       <path d="m3 7 9 6 9-6" stroke-linecap="round" stroke-linejoin="round" />
                     }
+                    @case ('settings') {
+                      <circle cx="12" cy="12" r="3" />
+                      <path
+                        d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.5-1 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1-1.5 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H8a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V8c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    }
                   }
                 </svg>
               </span>
@@ -150,9 +158,9 @@ interface NavItem {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0.875rem 0.75rem 0.75rem;
+      padding: 0.85rem 0.85rem 0.75rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      min-height: 64px;
+      min-height: 4.75rem;
     }
 
     .brand-link {
@@ -163,11 +171,17 @@ interface NavItem {
     }
 
     .brand-logo {
-      width: 100%;
+      width: auto;
       max-width: 108px;
+      max-height: 44px;
       height: auto;
       display: block;
-      filter: drop-shadow(0 2px 8px rgba(26, 43, 60, 0.12));
+      object-fit: contain;
+    }
+
+    .sidebar.collapsed .brand {
+      min-height: 3.75rem;
+      padding: 0.65rem 0.4rem;
     }
 
     .brand-mark {
@@ -185,6 +199,7 @@ interface NavItem {
     .brand-mark img {
       width: 36px;
       height: auto;
+      object-fit: contain;
     }
 
     nav {
@@ -418,8 +433,10 @@ export class SidebarComponent {
     ];
 
     if (this.auth.isSuperAdmin()) {
-      items.push({ label: 'Sub-admins', route: '/subadmins', icon: 'users' });
+      items.push({ label: 'Users', route: '/subadmins', icon: 'users' });
     }
+
+    items.push({ label: 'Settings', route: '/settings', icon: 'settings' });
 
     return items;
   });

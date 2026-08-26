@@ -43,7 +43,7 @@ import { SidebarService } from '../../core/services/sidebar.service';
   styles: `
     .topbar {
       height: var(--header-height);
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border-light);
       box-shadow: var(--shadow-header);
@@ -54,6 +54,7 @@ import { SidebarService } from '../../core/services/sidebar.service';
       position: sticky;
       top: 0;
       z-index: 50;
+      flex-shrink: 0;
       gap: 0.75rem;
       width: 100%;
       max-width: 100%;
@@ -226,7 +227,7 @@ export class HeaderComponent {
   protected readonly roleLabel = computed(() => {
     const role = this.auth.user()?.role;
     if (role === 'SuperAdmin') return 'Super admin';
-    if (role === 'SubAdmin') return 'Sub-admin';
+    if (role === 'SubAdmin') return 'User';
     return role || 'Admin';
   });
 

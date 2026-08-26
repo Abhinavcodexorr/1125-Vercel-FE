@@ -63,9 +63,24 @@ export const routes: Routes = [
           import('./features/subadmins/subadmins.component').then((m) => m.SubadminsComponent),
       },
       {
+        path: 'subadmins/new',
+        loadComponent: () =>
+          import('./features/subadmins/subadmin-form.component').then((m) => m.SubadminFormComponent),
+      },
+      {
+        path: 'subadmins/:id/edit',
+        loadComponent: () =>
+          import('./features/subadmins/subadmin-form.component').then((m) => m.SubadminFormComponent),
+      },
+      {
         path: 'subscribers',
         loadComponent: () =>
           import('./features/subscribers/subscribers.component').then((m) => m.SubscribersComponent),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.component').then((m) => m.SettingsComponent),
       },
     ],
   },

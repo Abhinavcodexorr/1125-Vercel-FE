@@ -25,7 +25,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(outgoing).pipe(
     catchError((err) => {
-      if (err.status === 401 && isApiRequest && !isPublicAuthRequest) {
+      if (
+        err.status === 401 &&
+        isApiRequest &&
+        !isPublicAuthRequest &&
+        !req.url.includes('/superadmin/password')
+      ) {
         auth.handleUnauthorized();
       }
       return throwError(() => err);

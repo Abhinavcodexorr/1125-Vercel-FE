@@ -4,7 +4,7 @@ import { Component, input } from '@angular/core';
   selector: 'app-page-header',
   standalone: true,
   template: `
-    <header class="page-header" [class.centered]="centered()">
+    <header class="page-header" [class.centered]="centered()" [class.no-divider]="!showDivider()">
       <div class="page-header-text">
         @if (showEyebrow()) {
           <p class="eyebrow">1125 Beach Villa</p>
@@ -34,10 +34,10 @@ import { Component, input } from '@angular/core';
       min-width: 0;
     }
 
-    .page-header.centered {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+    .page-header.no-divider {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0.35rem;
     }
 
     .page-header.centered .actions {
@@ -153,4 +153,5 @@ export class PageHeaderComponent {
   readonly subtitle = input<string>('');
   readonly centered = input(false);
   readonly showEyebrow = input(true);
+  readonly showDivider = input(true);
 }

@@ -50,21 +50,36 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 
     .main {
       margin-left: var(--sidebar-current);
-      min-height: 100vh;
+      height: 100dvh;
+      min-height: 100dvh;
+      max-height: 100dvh;
       min-width: 0;
       max-width: 100%;
-      overflow-x: clip;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       transition: margin-left var(--transition);
     }
 
     .content {
+      flex: 1;
+      min-height: 0;
       padding: 1.5rem 1.75rem 2.25rem;
       animation: fadeIn 0.4s ease;
       max-width: var(--content-max-width);
       margin: 0 auto;
       min-width: 0;
       width: 100%;
-      overflow-x: clip;
+      overflow: auto;
+    }
+
+    .content:has(app-bookings) {
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: 0.55rem;
+      padding-bottom: 0.45rem;
     }
 
     .sidebar-backdrop {
@@ -83,6 +98,11 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
       .content {
         padding: 1.75rem 2.25rem 2.5rem;
       }
+
+      .content:has(app-bookings) {
+        padding-top: 0.55rem;
+        padding-bottom: 0.45rem;
+      }
     }
 
     @media (max-width: 768px) {
@@ -97,11 +117,21 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
       .content {
         padding: 1rem 1rem 1.75rem;
       }
+
+      .content:has(app-bookings) {
+        padding-top: 0.6rem;
+        padding-bottom: 0.5rem;
+      }
     }
 
     @media (max-width: 480px) {
       .content {
         padding: 0.875rem 0.75rem 1.5rem;
+      }
+
+      .content:has(app-bookings) {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
       }
     }
   `,

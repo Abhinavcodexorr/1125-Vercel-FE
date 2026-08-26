@@ -1,20 +1,12 @@
-<app-page-header title="Subscribers" subtitle="Newsletter and website email subscribers.">
-  <button type="button" class="btn btn-secondary btn-sm" (click)="load()" [disabled]="api.loading()">
-    {{ api.loading() ? 'Loading…' : 'Refresh' }}
-  </button>
-</app-page-header>
+<app-page-header title="Subscribers" subtitle="Newsletter and website email subscribers." />
 
 <div class="alert alert-error" *ngIf="api.error()">{{ api.error() }}</div>
 
-<div class="filter-bar">
-  <span class="result-count">{{ api.list().total }} total</span>
-</div>
-
-<app-empty-state
+<app-shimmer-list
   *ngIf="api.loading() && api.list().subscribers.length === 0"
-  icon="✉"
-  title="Loading subscribers…"
-></app-empty-state>
+  [rows]="8"
+  [columns]="2"
+/>
 
 <app-empty-state
   *ngIf="!api.loading() && api.list().subscribers.length === 0"
@@ -28,17 +20,13 @@
       <thead>
         <tr>
           <th>Email</th>
-          <th>Source</th>
           <th>Subscribed</th>
-          <th>Created</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let s of api.list().subscribers; trackBy: trackById">
           <td><strong>{{ s.email }}</strong></td>
-          <td>{{ s.source || '—' }}</td>
           <td>{{ (s.subscribedAt || s.createdAt) | date: 'medium' }}</td>
-          <td>{{ s.createdAt | date: 'mediumDate' }}</td>
         </tr>
       </tbody>
     </table>
@@ -51,5 +39,6 @@
     [disabled]="api.loading()"
     (previous)="prevPage()"
     (next)="nextPage()"
+    (goTo)="goToPage($event)"
   />
 </div>

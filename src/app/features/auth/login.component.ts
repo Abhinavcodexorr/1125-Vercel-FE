@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="login-page">
       <section class="brand-panel">
         <div class="brand-content">
-          <img src="/logo.svg" alt="1125 Beach Villa" class="brand-logo" />
+          <img src="/logo.png" alt="1125 Beach Villa" class="brand-logo" />
           <p class="brand-tag">Admin Portal</p>
           <h1>Manage your beach villa with ease</h1>
           <p class="brand-copy">
@@ -31,7 +31,7 @@ import { AuthService } from '../../core/services/auth.service';
       <section class="form-panel">
         <div class="form-wrap">
           <div class="mobile-brand">
-            <img src="/logo-mark.svg" alt="1125" />
+            <img src="/logo-mark.png" alt="1125" />
             <span>1125 Beach Villa</span>
           </div>
 
@@ -173,9 +173,11 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .brand-logo {
-      width: min(280px, 72%);
+      width: min(160px, 55%);
+      height: auto;
+      max-height: 56px;
+      object-fit: contain;
       margin-bottom: 1rem;
-      filter: brightness(0) invert(1);
     }
 
     .brand-tag {
@@ -259,8 +261,9 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .mobile-brand img {
-      width: 42px;
-      height: 42px;
+      width: auto;
+      height: 32px;
+      filter: brightness(0);
     }
 
     .login-card {
@@ -420,8 +423,11 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
 
-    if (this.route.snapshot.queryParamMap.get('reason') === 'session-expired') {
+    const reason = this.route.snapshot.queryParamMap.get('reason');
+    if (reason === 'session-expired') {
       this.sessionNotice.set('Your session expired. Please sign in again.');
+    } else if (reason === 'password-updated') {
+      this.sessionNotice.set('Password updated. Please sign in with your new password.');
     }
   }
 

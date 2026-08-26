@@ -45,11 +45,13 @@ export interface Booking {
   adults?: number;
   children?: number;
   numGuests: number;
+  specialRequests?: string;
   grandTotal: number;
   currency?: string;
   payment: BookingPayment;
   status: BookingStatus;
   createdAt: string;
+  cancelledAt?: string;
 }
 
 export interface BookingDashboardStats {
@@ -105,6 +107,15 @@ export interface ApiBookingCalendarItem {
   };
   adults?: number;
   children?: number;
+  nights?: number;
+  numberOfGuests?: number;
+  numGuests?: number;
+  specialRequests?: string;
+  specialRequest?: string;
+  requests?: string;
+  notes?: string;
+  message?: string;
+  additionalRequests?: string;
   totalAmount?: number;
   currency?: string;
   paymentStatus?: string;
@@ -124,11 +135,67 @@ export interface BookingCalendarEntry {
   guestMobile?: string;
   adults?: number;
   children?: number;
+  nights?: number;
+  numGuests?: number;
+  specialRequests?: string;
   cabinType?: string;
   title?: string;
   paymentStatus?: string;
   totalAmount?: number;
   currency?: string;
+}
+
+export function countNights(checkIn?: string, checkOut?: string, nights?: number): number | undefined {
+  if (typeof nights === 'number' && Number.isFinite(nights) && nights > 0) {
+    return nights;
+  }
+  if (!checkIn || !checkOut) return undefined;
+
+  const start = dateOnly(checkIn);
+  const end = dateOnly(checkOut);
+  if (!start || !end) return undefined;
+
+  const diff = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  return diff > 0 ? diff : undefined;
+}
+
+function dateOnly(value: string): Date | null {
+  const iso = value.includes('T') ? value.slice(0, 10) : value.slice(0, 10);
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function toUtcIso(value?: string): string | undefined {
+  if (!value) return undefined;
+  const raw = value.trim();
+  if (!raw) return undefined;
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
+  const date = new Date(hasZone ? raw : raw.includes('T') || raw.includes(' ') ? `${raw.replace(' ', 'T')}Z` : `${raw}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function parseSpecialRequests(
+  source?: {
+    specialRequests?: string;
+    specialRequest?: string;
+    requests?: string;
+    notes?: string;
+    message?: string;
+    additionalRequests?: string;
+    guestNotes?: string;
+  } | null,
+): string | undefined {
+  const value =
+    source?.specialRequests ??
+    source?.specialRequest ??
+    source?.requests ??
+    source?.notes ??
+    source?.message ??
+    source?.additionalRequests ??
+    source?.guestNotes;
+  const trimmed = value?.trim();
+  return trimmed || undefined;
 }
 
 export function isPaidCalendarBooking(entry: BookingCalendarEntry): boolean {
@@ -139,6 +206,10 @@ export function mapBookingCalendarEntry(doc: ApiBookingCalendarItem): BookingCal
   const guestName = `${doc.guest?.firstName ?? ''} ${doc.guest?.lastName ?? ''}`.trim();
   const titleParts = doc.title?.split(' - ') ?? [];
   const roomTitle = doc.cabin?.name ?? titleParts[0]?.trim() ?? doc.title ?? 'Booking';
+  const adults = doc.adults ?? 0;
+  const children = doc.children ?? 0;
+  const numGuests =
+    adults + children > 0 ? adults + children : (doc.numberOfGuests ?? doc.numGuests ?? undefined);
 
   return {
     id: doc.id,
@@ -150,8 +221,11 @@ export function mapBookingCalendarEntry(doc: ApiBookingCalendarItem): BookingCal
     guestName: guestName || titleParts.slice(1).join(' - ').trim() || 'Guest',
     guestEmail: doc.guest?.email,
     guestMobile: doc.guest?.mobileNumber,
-    adults: doc.adults,
-    children: doc.children,
+    adults: adults || undefined,
+    children: children || undefined,
+    nights: countNights(doc.start, doc.end, doc.nights),
+    numGuests,
+    specialRequests: parseSpecialRequests(doc),
     cabinType: doc.cabin?.cabinType,
     title: doc.title,
     paymentStatus: doc.paymentStatus,
@@ -234,6 +308,13 @@ export interface ApiBookingDocument {
   numberOfGuests?: number;
   numGuests?: number;
   guests?: number;
+  specialRequests?: string;
+  specialRequest?: string;
+  requests?: string;
+  notes?: string;
+  message?: string;
+  additionalRequests?: string;
+  guestNotes?: string;
   amounts?: ApiBookingAmounts;
   totalAmount?: number;
   grandTotal?: number;
@@ -254,6 +335,10 @@ export interface ApiBookingDocument {
   };
   currency?: string;
   createdAt?: string;
+  created_at?: string;
+  cancelledAt?: string;
+  cancelled_at?: string;
+  canceledAt?: string;
 }
 
 export function normalizeBookingStatus(status?: string): BookingStatus {
@@ -327,10 +412,15 @@ export function mapApiBooking(doc: ApiBookingDocument): Booking {
     },
     checkIn: doc.checkInDate ?? doc.checkIn ?? '',
     checkOut: doc.checkOutDate ?? doc.checkOut ?? '',
-    nights: doc.nights,
+    nights: countNights(
+      doc.checkInDate ?? doc.checkIn,
+      doc.checkOutDate ?? doc.checkOut,
+      doc.nights,
+    ),
     adults: adults || undefined,
     children: children || undefined,
     numGuests,
+    specialRequests: parseSpecialRequests(doc),
     grandTotal: amount,
     currency,
     payment: {
@@ -342,7 +432,8 @@ export function mapApiBooking(doc: ApiBookingDocument): Booking {
       paymentDate: doc.paymentDate ?? doc.payment?.paymentDate,
     },
     status: normalizeBookingStatus(doc.status),
-    createdAt: doc.createdAt ?? new Date().toISOString(),
+    createdAt: toUtcIso(doc.createdAt ?? doc.created_at) ?? new Date().toISOString(),
+    cancelledAt: toUtcIso(doc.cancelledAt ?? doc.cancelled_at ?? doc.canceledAt),
   };
 }
 

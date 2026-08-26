@@ -46,22 +46,6 @@ interface CalendarMonth {
             <div class="alert alert-error">{{ actionError() }}</div>
           }
 
-          @if (loading()) {
-            <div class="summary summary-loading" aria-busy="true">
-              <span class="chip skeleton"></span>
-              <span class="chip skeleton"></span>
-              <span class="chip skeleton"></span>
-              <span class="chip skeleton"></span>
-            </div>
-          } @else if (availability(); as avail) {
-            <div class="summary">
-              <span class="chip">{{ roomQuantity() }} units</span>
-              <span class="chip booked">{{ avail.bookedDates.length }} booked days</span>
-              <span class="chip blocked">{{ avail.blockedDates?.length ?? 0 }} blocked</span>
-              <span class="chip available">{{ availableDayCount() }} available</span>
-            </div>
-          }
-
           <div class="legend">
               <span><i class="dot available"></i> Available</span>
               <span><i class="dot booked"></i> Fully booked</span>
@@ -212,19 +196,6 @@ interface CalendarMonth {
       font-size: 0.9375rem;
     }
 
-    .summary-loading {
-      pointer-events: none;
-    }
-
-    .chip.skeleton {
-      min-width: 5.5rem;
-      height: 1.75rem;
-      background: linear-gradient(90deg, var(--primary-muted) 25%, var(--primary-soft) 50%, var(--primary-muted) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.2s ease-in-out infinite;
-      color: transparent;
-    }
-
     @keyframes shimmer {
       0% { background-position: 100% 0; }
       100% { background-position: -100% 0; }
@@ -232,42 +203,6 @@ interface CalendarMonth {
 
     .calendar-loading .day.pending {
       animation: shimmer 1.2s ease-in-out infinite;
-    }
-
-    .summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .chip {
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      background: var(--primary-muted);
-      color: var(--text-secondary);
-    }
-
-    .chip.booked {
-      background: #fdeaea;
-      color: var(--danger);
-    }
-
-    .chip.blocked {
-      background: #fef6e6;
-      color: var(--warning);
-    }
-
-    .chip.available {
-      background: #e6f4ed;
-      color: var(--success);
-    }
-
-    .chip.partial {
-      background: #fff8e6;
-      color: #b8860b;
     }
 
     .legend {
@@ -550,25 +485,6 @@ export class RoomAvailabilityModalComponent implements OnInit {
     return false;
   });
 
-  protected readonly availableDayCount = computed(() => {
-    const availability = this.availability();
-    if (!availability) return 0;
-    if (availability.availableDates.length > 0) return availability.availableDates.length;
-
-    const today = startOfDay(new Date());
-    const end = addDays(today, 365);
-    const booked = new Set(availability.bookedDates);
-    const blocked = new Set(availability.blockedDates ?? []);
-    let count = 0;
-
-    for (let date = new Date(today); date <= end; date = addDays(date, 1)) {
-      const key = dateKey(date);
-      if (!booked.has(key) && !blocked.has(key)) count++;
-    }
-
-    return count;
-  });
-
   protected readonly changeSummary = computed(() => {
     const availability = this.availability();
     if (!availability) return '';
@@ -831,12 +747,12 @@ function buildMonth(
     let status: DayStatus;
     let label: string | undefined;
 
-    if (blockedSet.has(key) || occupancy?.blocked) {
+    if (date < today) {
+      status = 'past';
+    } else if (blockedSet.has(key) || occupancy?.blocked) {
       status = 'blocked';
     } else if (bookedSet.has(key) || (occupancy && occupancy.availableUnits <= 0 && occupancy.bookedCount > 0)) {
       status = 'booked';
-    } else if (date < today) {
-      status = 'past';
     } else if (!dataLoaded) {
       status = 'pending';
     } else if (
