@@ -48,9 +48,11 @@ interface CalendarMonth {
 
           <div class="legend">
               <span><i class="dot available"></i> Available</span>
+              <span><i class="dot partial"></i> Partial</span>
               <span><i class="dot booked"></i> Fully booked</span>
               <span><i class="dot blocked"></i> Blocked</span>
             </div>
+            <p class="hint">Click dates to block or unblock, then press Update availability.</p>
 
           <section class="calendar" [class.calendar-loading]="loading()">
             <div class="month-nav">
@@ -223,9 +225,20 @@ interface CalendarMonth {
       border: 1px solid var(--danger);
     }
 
+    .dot.partial {
+      background: #fff8e6;
+      border: 1px solid #d4a017;
+    }
+
     .dot.blocked {
       background: #ffedd5;
       border: 1px solid #f97316;
+    }
+
+    .hint {
+      margin: -0.35rem 0 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     .update-section {
@@ -577,6 +590,7 @@ export class RoomAvailabilityModalComponent implements OnInit {
       .subscribe({
         next: () => {
           this.saving.set(false);
+          this.reloadAvailability();
           this.updated.emit();
         },
         error: (err) => {
@@ -588,9 +602,14 @@ export class RoomAvailabilityModalComponent implements OnInit {
 
   private findBlockForDate(key: string): RoomBlockedDate | undefined {
     return this.blockedList().find((block) => {
-      const start = block.startDate.slice(0, 10);
-      const end = (block.endDate ?? block.startDate).slice(0, 10);
-      return key >= start && key <= end;
+      if (Array.isArray(block.occupiedDates) && block.occupiedDates.length) {
+        return block.occupiedDates.some((d) => String(d).slice(0, 10) === key);
+      }
+      const start = String(block.startDate).slice(0, 10);
+      const end = String(block.endDate ?? block.startDate).slice(0, 10);
+      // Stored ranges use exclusive end (like checkout)
+      if (end > start) return key >= start && key < end;
+      return key === start;
     });
   }
 
