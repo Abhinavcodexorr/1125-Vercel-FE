@@ -152,7 +152,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
               <div class="bed-options">
                 @for (bedType of bedTypes; track bedType) {
                   <div class="bed-option" [class.is-selected]="bedCount(bedType) > 0">
-                    <span>{{ bedType }}</span>
+                    <span class="bed-option-label">{{ bedType }}</span>
                     <div class="quantity-stepper">
                       <button type="button" class="stepper-btn" (click)="adjustBedCount(bedType, -1)" [disabled]="bedCount(bedType) <= 0" [attr.aria-label]="'Decrease ' + bedType">−</button>
                       <span class="stepper-value">{{ bedCount(bedType) }}</span>
@@ -160,13 +160,13 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
                     </div>
                   </div>
                 }
-              </div>
-              <div class="bed-option bedrooms" [class.is-selected]="bedroomCount() > 0">
-                <span>Bedrooms</span>
-                <div class="quantity-stepper">
-                  <button type="button" class="stepper-btn" (click)="adjustBedrooms(-1)" [disabled]="bedroomCount() <= 0" aria-label="Decrease bedrooms">−</button>
-                  <span class="stepper-value">{{ bedroomCount() }}</span>
-                  <button type="button" class="stepper-btn" (click)="adjustBedrooms(1)" aria-label="Increase bedrooms">+</button>
+                <div class="bed-option" [class.is-selected]="bedroomCount() > 0">
+                  <span class="bed-option-label">Bedrooms</span>
+                  <div class="quantity-stepper">
+                    <button type="button" class="stepper-btn" (click)="adjustBedrooms(-1)" [disabled]="bedroomCount() <= 0" aria-label="Decrease bedrooms">−</button>
+                    <span class="stepper-value">{{ bedroomCount() }}</span>
+                    <button type="button" class="stepper-btn" (click)="adjustBedrooms(1)" aria-label="Increase bedrooms">+</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -762,17 +762,17 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .bed-options {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
       gap: 0.65rem;
     }
 
     .bed-option {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 6.5rem;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      min-height: 3rem;
-      padding: 0.45rem 0.55rem 0.45rem 0.75rem;
+      column-gap: 0.55rem;
+      min-height: 3.1rem;
+      padding: 0.4rem 0.45rem 0.4rem 0.8rem;
       border: 1px solid var(--border-light);
       border-radius: var(--radius-sm);
       background: var(--white);
@@ -781,19 +781,34 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       font-weight: 600;
     }
 
+    .bed-option-label {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
     .bed-option.is-selected {
       border-color: var(--primary);
       background: var(--primary-muted);
       box-shadow: 0 0 0 3px rgba(124, 165, 200, 0.2);
     }
 
-    .bed-option.bedrooms {
-      max-width: 16rem;
+    .bed-option .quantity-stepper {
+      width: 6.5rem;
+      height: 2.15rem;
+      flex-shrink: 0;
     }
 
-    .bed-option .quantity-stepper {
-      width: 6.6rem;
-      flex-shrink: 0;
+    .bed-option .stepper-btn {
+      width: 2rem;
+      height: 2.15rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
     }
 
     .bed-option.is-selected .quantity-stepper {
@@ -802,11 +817,15 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .stepper-value {
       flex: 1;
-      min-width: 1.6rem;
+      min-width: 1.5rem;
+      height: 2.15rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       font-size: 0.9rem;
       font-weight: 700;
-      line-height: 2.2rem;
+      line-height: 1;
     }
 
     .status-panel {

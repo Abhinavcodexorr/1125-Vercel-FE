@@ -81,7 +81,6 @@ interface CalendarMonth {
                         [class.blocked]="displayStatus(cell) === 'blocked'"
                         [class.past]="displayStatus(cell) === 'past'"
                         [class.pending]="displayStatus(cell) === 'pending'"
-                        [class.today]="cell.isToday"
                         [class.selected]="displayStatus(cell) === 'selected'"
                         [class.clickable]="isDayClickable(cell)"
                         [disabled]="!isDayClickable(cell)"
@@ -99,13 +98,6 @@ interface CalendarMonth {
           </section>
 
           <section class="update-section">
-            @if (loading()) {
-              <p class="change-summary muted">Loading availability…</p>
-            } @else if (hasChanges()) {
-              <p class="change-summary">{{ changeSummary() }}</p>
-            } @else {
-              <p class="change-summary muted">No changes yet</p>
-            }
             <div class="update-actions">
               @if (hasChanges()) {
                 <button type="button" class="btn btn-sm" (click)="resetSelection()">Reset</button>
@@ -242,16 +234,6 @@ interface CalendarMonth {
       border-top: 1px solid var(--border-light);
     }
 
-    .change-summary {
-      margin: 0 0 0.75rem;
-      font-size: 0.875rem;
-      color: var(--text);
-    }
-
-    .change-summary.muted {
-      color: var(--text-muted);
-    }
-
     .update-actions {
       display: flex;
       flex-wrap: wrap;
@@ -386,10 +368,6 @@ interface CalendarMonth {
       font-weight: 500;
     }
 
-    .day.today {
-      box-shadow: inset 0 0 0 2px var(--primary);
-    }
-
     @media (max-width: 640px) {
       .overlay {
         padding: 0.75rem;
@@ -467,19 +445,6 @@ export class RoomAvailabilityModalComponent implements OnInit {
       if (!selected.has(date)) return true;
     }
     return false;
-  });
-
-  protected readonly changeSummary = computed(() => {
-    const availability = this.availability();
-    if (!availability) return '';
-    const serverBlocked = new Set(availability.blockedDates ?? []);
-    const selected = this.selectedDates();
-    const toBlock = [...selected].filter((date) => !serverBlocked.has(date)).length;
-    const toUnblock = [...serverBlocked].filter((date) => !selected.has(date)).length;
-    const parts: string[] = [];
-    if (toBlock) parts.push(`${toBlock} to block`);
-    if (toUnblock) parts.push(`${toUnblock} to unblock`);
-    return parts.join(', ');
   });
 
   protected readonly monthBounds = computed(() => {

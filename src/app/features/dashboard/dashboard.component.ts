@@ -82,7 +82,6 @@ interface CalendarMonth {
                     [class.available]="cell.status === 'available'"
                     [class.past]="cell.status === 'past'"
                     [class.booked]="cell.status === 'booked'"
-                    [class.today]="cell.isToday"
                     [class.selected]="selectedDate() === cell.key"
                     [disabled]="cell.status !== 'booked'"
                     (click)="onDayClick(cell)"
@@ -314,11 +313,6 @@ interface CalendarMonth {
       border: 1px solid var(--danger);
     }
 
-    .dot.today {
-      background: var(--primary-soft);
-      border: 2px solid var(--primary);
-    }
-
     .calendar-loading {
       display: flex;
       flex-direction: column;
@@ -408,14 +402,6 @@ interface CalendarMonth {
 
     .day:disabled {
       cursor: default;
-    }
-
-    .day.today:not(.booked) {
-      box-shadow: inset 0 0 0 2px var(--primary);
-    }
-
-    .day.today.booked {
-      box-shadow: inset 0 0 0 2px var(--primary), 0 0 0 1px #f5c4c4;
     }
 
     .day.empty {
