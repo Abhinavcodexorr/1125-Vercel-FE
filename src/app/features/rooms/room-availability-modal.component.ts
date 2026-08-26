@@ -190,12 +190,6 @@ interface CalendarMonth {
       padding: 1.25rem 1.5rem 1.5rem;
     }
 
-    .loading {
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.9375rem;
-    }
-
     @keyframes shimmer {
       0% { background-position: 100% 0; }
       100% { background-position: -100% 0; }
@@ -237,19 +231,9 @@ interface CalendarMonth {
       border: 1px solid var(--danger);
     }
 
-    .dot.partial {
-      background: #fff8e6;
-      border: 1px solid #d4a017;
-    }
-
     .dot.blocked {
       background: #ffedd5;
       border: 1px solid #f97316;
-    }
-
-    .dot.today {
-      background: var(--primary-soft);
-      border: 2px solid var(--primary);
     }
 
     .update-section {

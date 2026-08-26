@@ -327,8 +327,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       color: var(--text);
     }
 
-    .panel-head p,
-    .hint {
+    .panel-head p {
       margin: 0.25rem 0 0;
       font-size: 0.8125rem;
       color: var(--text-muted);
@@ -341,10 +340,9 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .grid-2 {
       display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 1rem 1.15rem;
     }
-
-    .grid-2 { grid-template-columns: 1fr 1fr; }
 
     .pricing-row,
     .stay-row {
@@ -881,26 +879,9 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       margin-left: auto;
     }
 
-    @media (max-width: 900px) {
-      .grid-2 {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
     @media (max-width: 640px) {
       .grid-2 {
         grid-template-columns: 1fr;
-      }
-
-      .currency-field,
-      .price-field,
-      .guests-field,
-      .quantity-field {
-        width: 7.25rem;
-      }
-
-      .quantity-field {
-        width: 8.75rem;
       }
 
       .panel-head,
