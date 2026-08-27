@@ -8,7 +8,6 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { RoomAvailabilityModalComponent } from './room-availability-modal.component';
-import { RoomQuantityModalComponent } from './room-quantity-modal.component';
 import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimmer-list.component';
 
 @Component({
@@ -20,7 +19,6 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
     RouterLink,
     AppCurrencyPipe,
     RoomAvailabilityModalComponent,
-    RoomQuantityModalComponent,
     ShimmerListComponent,
   ],
   template: `
@@ -87,20 +85,21 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
                   </svg>
                   <span>{{ typeLabel(room) }}</span>
                 </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <rect x="3" y="5" width="18" height="16" rx="2" />
-                    <path d="M8 3v4M16 3v4M3 10h18" />
-                    <path d="M8 14h3M13 14h3" />
-                  </svg>
-                  <span>Weekday {{ room.wdPrice | appCurrency: room.currency }}</span>
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-                  </svg>
-                  <span>Weekend {{ room.wePrice | appCurrency: room.currency }}</span>
+                <li class="prices">
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <rect x="2.5" y="6" width="19" height="12" rx="2.2" />
+                      <circle cx="12" cy="12" r="2.4" />
+                    </svg>
+                    Weekday {{ room.wdPrice | appCurrency: room.currency }}
+                  </span>
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <rect x="2.5" y="6" width="19" height="12" rx="2.2" />
+                      <circle cx="12" cy="12" r="2.4" />
+                    </svg>
+                    Weekend {{ room.wePrice | appCurrency: room.currency }}
+                  </span>
                 </li>
               </ul>
 
@@ -119,14 +118,6 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
                   </svg>
                   Availability
                 </button>
-                @if (room.quantity > 1) {
-                  <button type="button" class="room-btn room-btn-qty" (click)="openQuantity(room)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M4 7h16M4 12h16M4 17h10" />
-                    </svg>
-                    Quantity
-                  </button>
-                }
                 @if (room.isActive) {
                   <button type="button" class="room-btn room-btn-deactivate" (click)="deactivate(room.id)">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -163,16 +154,6 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
         [roomQuantity]="room.quantity"
         (closed)="closeAvailability()"
         (updated)="onAvailabilityUpdated(room)"
-      />
-    }
-
-    @if (quantityRoom(); as room) {
-      <app-room-quantity-modal
-        [idOrSlug]="room.slug || room.id"
-        [roomTitle]="room.title"
-        [roomQuantity]="room.quantity"
-        (closed)="closeQuantity()"
-        (updated)="onQuantityUpdated(room)"
       />
     }
   `,
@@ -326,6 +307,24 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       white-space: nowrap;
     }
 
+    .details .prices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .details .prices span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .details .prices svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
     .actions {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
@@ -357,7 +356,6 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .room-btn-edit,
     .room-btn-avail,
-    .room-btn-qty,
     .room-btn-deactivate,
     .room-btn-activate,
     .room-btn-delete {
@@ -388,16 +386,6 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .room-btn-avail:hover {
       background: #fef6e6;
-    }
-
-    .room-btn-qty {
-      background: var(--white);
-      color: var(--primary-dark);
-      border: 1px solid var(--primary);
-    }
-
-    .room-btn-qty:hover {
-      background: var(--primary-soft);
     }
 
     .room-btn-deactivate {
@@ -443,7 +431,6 @@ export class RoomsComponent implements OnInit {
   private readonly confirmService = inject(ConfirmService);
 
   protected readonly availabilityRoom = signal<AdminRoom | null>(null);
-  protected readonly quantityRoom = signal<AdminRoom | null>(null);
   private readonly blockedByRoomId = signal<Record<string, number>>({});
   private blockedLoadId = 0;
 
@@ -497,7 +484,6 @@ export class RoomsComponent implements OnInit {
   }
 
   openAvailability(room: AdminRoom): void {
-    this.quantityRoom.set(null);
     this.availabilityRoom.set(room);
   }
 
@@ -505,23 +491,12 @@ export class RoomsComponent implements OnInit {
     this.availabilityRoom.set(null);
   }
 
-  openQuantity(room: AdminRoom): void {
-    this.availabilityRoom.set(null);
-    this.quantityRoom.set(room);
-  }
-
-  closeQuantity(): void {
-    this.quantityRoom.set(null);
-  }
-
   onAvailabilityUpdated(room: AdminRoom): void {
-    this.closeAvailability();
+    if (room.quantity <= 1) {
+      this.closeAvailability();
+    }
     this.roomApi.refreshOne(room.slug || room.id).subscribe();
     this.refreshBlockedCount(room);
-  }
-
-  onQuantityUpdated(_room: AdminRoom): void {
-    // Keep modal open after save; parent can refresh list if needed later.
   }
 
   private loadBlockedCounts(rooms: AdminRoom[]): void {

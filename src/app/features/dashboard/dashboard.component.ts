@@ -835,7 +835,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   protected quantityLabel(entry: BookingCalendarEntry): string {
     const quantity = this.bookingDetails()[entry.id]?.quantity ?? entry.quantity;
     if (quantity == null || quantity < 1) return '—';
-    return `${quantity} unit${quantity === 1 ? '' : 's'}`;
+    return String(quantity);
   }
 
   protected specialRequests(entry: BookingCalendarEntry): string | undefined {

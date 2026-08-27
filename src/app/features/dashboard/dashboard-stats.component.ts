@@ -13,7 +13,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       <section class="panel" aria-hidden="true">
         <div class="skel-head"></div>
         <div class="skel-row">
-          @for (item of [1, 2, 3, 4, 5]; track item) {
+          @for (item of [1, 2, 3, 4]; track item) {
             <div class="skel-cell"></div>
           }
         </div>
@@ -33,11 +33,6 @@ import { BookingApiService } from '../../core/services/booking-api.service';
           <article class="stat">
             <p class="label">Total bookings</p>
             <p class="value">{{ stats().totalBookings }}</p>
-          </article>
-
-          <article class="stat pending">
-            <p class="label">Pending</p>
-            <p class="value">{{ stats().pendingBookings }}</p>
           </article>
 
           <article class="stat complete">
@@ -81,7 +76,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
 
     .row {
       display: grid;
-      grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr));
+      grid-template-columns: 1.3fr repeat(3, minmax(0, 1fr));
       gap: 0;
       align-items: start;
     }
@@ -118,7 +113,6 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       color: var(--btn-primary-bg);
     }
 
-    .pending .value { color: var(--warning); }
     .complete .value { color: var(--success); }
     .cancelled .value { color: var(--danger); }
 
@@ -134,7 +128,7 @@ import { BookingApiService } from '../../core/services/booking-api.service';
 
     .skel-row {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
     }
 
@@ -201,7 +195,6 @@ export class DashboardStatsComponent implements OnInit {
 
     return {
       totalBookings: statistics?.totalBookings ?? 0,
-      pendingBookings: statistics?.pendingBookings ?? 0,
       completedBookings: statistics?.completedBookings ?? 0,
       cancelledBookings: statistics?.cancelledBookings ?? 0,
       totalRevenue: statistics?.totalRevenue ?? 0,

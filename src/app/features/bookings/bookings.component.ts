@@ -69,7 +69,7 @@ const PAGE_SIZE = 15;
                   <th>Nights</th>
                   <th>Customer details</th>
                   <th>Guests</th>
-                  <th>Quantity</th>
+                  <th class="col-center">Quantity</th>
                   <th>Special requests</th>
                   <th>Amount</th>
                   <th class="col-center">Payment status</th>
@@ -91,9 +91,6 @@ const PAGE_SIZE = 15;
                   <tr [class.row-cancelled]="b.status === 'cancelled'">
                     <td class="room-cell">
                       <strong>{{ b.snapshot.categoryName || b.bookingType || '-' }}</strong>
-                      @if (b.stayName || b.snapshot.roomTitle) {
-                        <small>{{ b.stayName || b.snapshot.roomTitle }}</small>
-                      }
                     </td>
                     <td class="date-cell">{{ b.checkIn | date: 'MMM d, y' }}</td>
                     <td class="date-cell">{{ b.checkOut | date: 'MMM d, y' }}</td>
@@ -108,7 +105,7 @@ const PAGE_SIZE = 15;
                       }
                     </td>
                     <td>{{ guestSummary(b) }}</td>
-                    <td class="qty-cell">{{ quantityLabel(b) }}</td>
+                    <td class="qty-cell col-center">{{ quantityLabel(b) }}</td>
                     <td class="requests-cell">{{ b.specialRequests || '-' }}</td>
                     <td class="amount-cell">
                       <span class="amount-code">{{ currencySymbol(b.currency) }}</span>
@@ -612,8 +609,7 @@ export class BookingsComponent implements OnInit {
   }
 
   protected quantityLabel(booking: Booking): string {
-    const quantity = booking.quantity || 1;
-    return `${quantity} unit${quantity === 1 ? '' : 's'}`;
+    return String(booking.quantity || 1);
   }
 
   protected formatMobile(value?: string): string {
