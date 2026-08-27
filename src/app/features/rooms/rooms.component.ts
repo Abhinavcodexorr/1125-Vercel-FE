@@ -8,6 +8,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { RoomAvailabilityModalComponent } from './room-availability-modal.component';
+import { RoomQuantityModalComponent } from './room-quantity-modal.component';
 import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimmer-list.component';
 
 @Component({
@@ -19,6 +20,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
     RouterLink,
     AppCurrencyPipe,
     RoomAvailabilityModalComponent,
+    RoomQuantityModalComponent,
     ShimmerListComponent,
   ],
   template: `
@@ -117,6 +119,14 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
                   </svg>
                   Availability
                 </button>
+                @if (room.quantity > 1) {
+                  <button type="button" class="room-btn room-btn-qty" (click)="openQuantity(room)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M4 7h16M4 12h16M4 17h10" />
+                    </svg>
+                    Quantity
+                  </button>
+                }
                 @if (room.isActive) {
                   <button type="button" class="room-btn room-btn-deactivate" (click)="deactivate(room.id)">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -153,6 +163,16 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
         [roomQuantity]="room.quantity"
         (closed)="closeAvailability()"
         (updated)="onAvailabilityUpdated(room)"
+      />
+    }
+
+    @if (quantityRoom(); as room) {
+      <app-room-quantity-modal
+        [idOrSlug]="room.slug || room.id"
+        [roomTitle]="room.title"
+        [roomQuantity]="room.quantity"
+        (closed)="closeQuantity()"
+        (updated)="onQuantityUpdated(room)"
       />
     }
   `,
@@ -308,7 +328,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
       gap: 0.5rem;
     }
 
@@ -337,6 +357,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .room-btn-edit,
     .room-btn-avail,
+    .room-btn-qty,
     .room-btn-deactivate,
     .room-btn-activate,
     .room-btn-delete {
@@ -367,6 +388,16 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .room-btn-avail:hover {
       background: #fef6e6;
+    }
+
+    .room-btn-qty {
+      background: var(--white);
+      color: var(--primary-dark);
+      border: 1px solid var(--primary);
+    }
+
+    .room-btn-qty:hover {
+      background: var(--primary-soft);
     }
 
     .room-btn-deactivate {
@@ -412,6 +443,7 @@ export class RoomsComponent implements OnInit {
   private readonly confirmService = inject(ConfirmService);
 
   protected readonly availabilityRoom = signal<AdminRoom | null>(null);
+  protected readonly quantityRoom = signal<AdminRoom | null>(null);
   private readonly blockedByRoomId = signal<Record<string, number>>({});
   private blockedLoadId = 0;
 
@@ -465,6 +497,7 @@ export class RoomsComponent implements OnInit {
   }
 
   openAvailability(room: AdminRoom): void {
+    this.quantityRoom.set(null);
     this.availabilityRoom.set(room);
   }
 
@@ -472,10 +505,23 @@ export class RoomsComponent implements OnInit {
     this.availabilityRoom.set(null);
   }
 
+  openQuantity(room: AdminRoom): void {
+    this.availabilityRoom.set(null);
+    this.quantityRoom.set(room);
+  }
+
+  closeQuantity(): void {
+    this.quantityRoom.set(null);
+  }
+
   onAvailabilityUpdated(room: AdminRoom): void {
     this.closeAvailability();
     this.roomApi.refreshOne(room.slug || room.id).subscribe();
     this.refreshBlockedCount(room);
+  }
+
+  onQuantityUpdated(_room: AdminRoom): void {
+    // Keep modal open after save; parent can refresh list if needed later.
   }
 
   private loadBlockedCounts(rooms: AdminRoom[]): void {

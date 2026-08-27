@@ -180,7 +180,32 @@ export interface RoomDateOccupancy {
   bookedCount: number;
   availableUnits: number;
   quantity: number;
+  maxQuantity?: number;
+  overrideQuantity?: number | null;
   blocked: boolean;
+}
+
+export interface RoomQuantityOverride {
+  _id?: string;
+  date: string;
+  quantity: number;
+}
+
+export interface RoomQuantityCalendar {
+  room: {
+    _id?: string;
+    title: string;
+    slug: string;
+    type: string;
+    quantity: number;
+  };
+  booked: RoomAvailabilityBooking[];
+  bookedDates: string[];
+  partiallyBookedDates?: string[];
+  availableDates: string[];
+  occupancyByDate?: Record<string, RoomDateOccupancy>;
+  quantityOverrides?: RoomQuantityOverride[];
+  summary?: RoomAvailabilitySummary;
 }
 
 export interface RoomAvailabilitySummary {

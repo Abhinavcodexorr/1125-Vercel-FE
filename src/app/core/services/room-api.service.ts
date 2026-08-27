@@ -12,6 +12,7 @@ import {
   RoomBlockedDatesData,
   RoomCreatePayload,
   RoomStatusPayload,
+  RoomQuantityCalendar,
   RoomUpdatePayload,
   mapApiRoom,
   mapRoomAvailability,
@@ -149,6 +150,36 @@ export class RoomApiService {
             type: context?.type,
           }),
         ),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  /** GET /rooms/:idOrSlug/quantity-calendar (admin) */
+  getQuantityCalendar(idOrSlug: string): Observable<RoomQuantityCalendar> {
+    return this.http
+      .get<unknown>(
+        `${this.api.baseUrl}/rooms/${encodeURIComponent(idOrSlug)}/quantity-calendar`,
+        { headers: this.api.authHeaders() },
+      )
+      .pipe(
+        map((body) => unwrapApiData<RoomQuantityCalendar>(body)),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  /** PUT /rooms/:idOrSlug/quantity-overrides (admin) */
+  setQuantityOverrides(
+    idOrSlug: string,
+    overrides: { date: string; quantity: number | null }[],
+  ): Observable<RoomQuantityCalendar> {
+    return this.http
+      .put<unknown>(
+        `${this.api.baseUrl}/rooms/${encodeURIComponent(idOrSlug)}/quantity-overrides`,
+        { overrides },
+        { headers: this.api.authHeaders() },
+      )
+      .pipe(
+        map((body) => unwrapApiData<RoomQuantityCalendar>(body)),
         catchError((err) => throwError(() => err)),
       );
   }
