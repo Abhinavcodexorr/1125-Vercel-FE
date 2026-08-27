@@ -35,7 +35,6 @@ interface CalendarMonth {
   template: `
     <app-page-header
       title="Dashboard"
-      subtitle="Booking overview"
     />
 
     <app-dashboard-stats />

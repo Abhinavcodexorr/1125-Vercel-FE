@@ -28,19 +28,8 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
     <div class="room-form-page">
       <app-page-header
         [title]="isEdit ? 'Update room' : 'Add room'"
-        [subtitle]="isEdit ? 'Change photos, details, and pricing.' : 'Add photos, details, and pricing in one place.'"
         [showDivider]="false"
-      >
-        <a routerLink="/rooms" class="btn btn-ghost">Cancel</a>
-        <button
-          type="submit"
-          form="room-form"
-          class="btn btn-primary"
-          [disabled]="loading() || form.invalid || saving() || uploading()"
-        >
-          {{ saving() ? 'Saving…' : isEdit ? 'Update room' : 'Add room' }}
-        </button>
-      </app-page-header>
+      />
 
       @if (error()) {
         <div class="alert alert-error">{{ error() }}</div>
@@ -114,10 +103,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
           <section class="panel card">
             <div class="panel-head">
-              <div>
-                <h2>Stay details</h2>
-                <p>How many people and units.</p>
-              </div>
+              <h2>Stay details</h2>
             </div>
 
             <div class="stay-row">
@@ -174,10 +160,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
           <section class="panel card">
             <div class="panel-head">
-              <div>
-                <h2>Pricing</h2>
-                <p>Weekday and weekend rates.</p>
-              </div>
+              <h2>Pricing</h2>
             </div>
 
             <div class="pricing-row">
@@ -208,10 +191,7 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
           <section class="panel card">
             <div class="panel-head">
-              <div>
-                <h2>Amenities</h2>
-                <p>Tap to select what this room includes.</p>
-              </div>
+              <h2>Amenities</h2>
             </div>
 
             <div class="amenities-grid" role="group" aria-label="Room amenities">
@@ -279,13 +259,14 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
                 <small>{{ form.controls.isActive.value ? 'Visible on the public site.' : 'Hidden from the public site.' }}</small>
               </span>
             </label>
-            <div class="footer-actions">
-              <a routerLink="/rooms" class="btn btn-ghost">Cancel</a>
-              <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving() || uploading()">
-                {{ saving() ? 'Saving…' : isEdit ? 'Update room' : 'Add room' }}
-              </button>
-            </div>
           </section>
+
+          <div class="footer-actions">
+            <a routerLink="/rooms" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving() || uploading()">
+              {{ saving() ? 'Saving…' : isEdit ? 'Update room' : 'Add room' }}
+            </button>
+          </div>
         </form>
       }
     </div>
@@ -894,8 +875,9 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
 
     .footer-actions {
       display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 0.65rem;
-      margin-left: auto;
     }
 
     @media (max-width: 640px) {
@@ -904,14 +886,14 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       }
 
       .panel-head,
-      .status-panel,
-      .footer-actions {
+      .status-panel {
         flex-direction: column;
         align-items: stretch;
       }
 
       .footer-actions {
-        margin-left: 0;
+        flex-direction: column-reverse;
+        align-items: stretch;
       }
     }
   `,

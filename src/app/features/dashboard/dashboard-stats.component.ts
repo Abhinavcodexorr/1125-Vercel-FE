@@ -10,167 +10,138 @@ import { BookingApiService } from '../../core/services/booking-api.service';
   imports: [AppCurrencyPipe],
   template: `
     @if (loading()) {
-      <div class="stats-loading">
-        @for (item of [1, 2, 3, 4]; track item) {
-          <div class="skeleton-card"></div>
-        }
-      </div>
+      <section class="panel" aria-hidden="true">
+        <div class="skel-head"></div>
+        <div class="skel-row">
+          @for (item of [1, 2, 3, 4, 5]; track item) {
+            <div class="skel-cell"></div>
+          }
+        </div>
+      </section>
     } @else {
-      <section class="stats-strip">
-        <article class="stat-card card total">
-          <div class="stat-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <rect x="4" y="5" width="16" height="15" rx="2" />
-              <path d="M8 3v4M16 3v4M4 10h16" />
-            </svg>
-          </div>
-          <div class="stat-copy">
-            <p class="stat-label">Total Bookings</p>
-            <p class="stat-value">{{ stats().totalBookings }}</p>
-          </div>
-        </article>
+      <section class="panel" aria-label="Booking statistics">
+        <header class="panel-head">
+          <h2>Overview</h2>
+        </header>
 
-        <article class="stat-card card complete">
-          <div class="stat-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <circle cx="12" cy="12" r="8" />
-              <path d="M9 12l2 2 4-4" />
-            </svg>
-          </div>
-          <div class="stat-copy">
-            <p class="stat-label">Complete Bookings</p>
-            <p class="stat-value">{{ stats().completedBookings }}</p>
-          </div>
-        </article>
+        <div class="row">
+          <article class="stat revenue">
+            <p class="label">Total revenue</p>
+            <p class="value">{{ stats().totalRevenue | appCurrency: 'GHS' }}</p>
+          </article>
 
-        <article class="stat-card card cancelled">
-          <div class="stat-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <circle cx="12" cy="12" r="8" />
-              <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
-            </svg>
-          </div>
-          <div class="stat-copy">
-            <p class="stat-label">Cancelled Bookings</p>
-            <p class="stat-value muted">{{ stats().cancelledBookings }}</p>
-          </div>
-        </article>
+          <article class="stat">
+            <p class="label">Total bookings</p>
+            <p class="value">{{ stats().totalBookings }}</p>
+          </article>
 
-        <article class="stat-card card revenue">
-          <div class="stat-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <rect x="3" y="7" width="18" height="12" rx="2" />
-              <path d="M3 11h18" />
-              <path d="M7 15h2" />
-            </svg>
-          </div>
-          <div class="stat-copy">
-            <p class="stat-label">Total Revenue</p>
-            <p class="stat-value revenue">
-              {{ stats().totalRevenue | appCurrency: 'GHS':'1.2-2' }}
-            </p>
-          </div>
-        </article>
+          <article class="stat pending">
+            <p class="label">Pending</p>
+            <p class="value">{{ stats().pendingBookings }}</p>
+          </article>
+
+          <article class="stat complete">
+            <p class="label">Complete</p>
+            <p class="value">{{ stats().completedBookings }}</p>
+          </article>
+
+          <article class="stat cancelled">
+            <p class="label">Cancelled</p>
+            <p class="value">{{ stats().cancelledBookings }}</p>
+          </article>
+        </div>
       </section>
     }
   `,
   styles: `
-    .stats-strip,
-    .stats-loading {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem;
+    .panel {
       margin-bottom: 1.5rem;
+      padding: 1.35rem 1.5rem 1.15rem;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
     }
 
-    .stat-card {
+    .panel-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      justify-content: space-between;
       gap: 1rem;
-      padding: 1.35rem 1.5rem;
-      border-left: 4px solid transparent;
-      min-height: 6.5rem;
+      margin-bottom: 1rem;
     }
 
-    .stat-card.total { border-left-color: #2563eb; }
-    .stat-card.complete { border-left-color: #7c3aed; }
-    .stat-card.cancelled { border-left-color: #94a3b8; }
-    .stat-card.revenue { border-left-color: #16a34a; }
-
-    .stat-icon {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 0.75rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+    .panel-head h2 {
+      margin: 0;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
     }
 
-    .stat-icon svg {
-      width: 1.5rem;
-      height: 1.5rem;
+    .row {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr));
+      gap: 0;
+      align-items: start;
     }
 
-    .total .stat-icon {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-
-    .complete .stat-icon {
-      background: #ede9fe;
-      color: #7c3aed;
-    }
-
-    .cancelled .stat-icon {
-      background: #f1f5f9;
-      color: #64748b;
-    }
-
-    .revenue .stat-icon {
-      background: #dcfce7;
-      color: #16a34a;
-    }
-
-    .stat-copy {
+    .stat {
+      padding: 0 0.9rem 0 1rem;
+      border-left: 1px solid var(--border-light);
       min-width: 0;
     }
 
-    .stat-label {
-      margin: 0 0 0.35rem;
-      font-size: 0.8125rem;
-      font-weight: 500;
+    .stat:first-child {
+      padding-left: 0;
+      border-left: none;
+    }
+
+    .label {
+      margin: 0 0 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
       color: var(--text-secondary);
     }
 
-    .stat-value {
+    .value {
       margin: 0;
-      font-size: 1.75rem;
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      word-break: break-word;
-    }
-
-    .stat-value.muted {
-      color: #94a3b8;
-    }
-
-    .stat-value.revenue {
-      color: #16a34a;
       font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      color: var(--text);
     }
 
-    .skeleton-card {
-      min-height: 6.5rem;
-      border-radius: var(--radius);
-      background: linear-gradient(
-        90deg,
-        var(--primary-muted) 25%,
-        var(--primary-soft) 50%,
-        var(--primary-muted) 75%
-      );
+    .revenue .value {
+      font-size: 1.6rem;
+      color: var(--btn-primary-bg);
+    }
+
+    .pending .value { color: var(--warning); }
+    .complete .value { color: var(--success); }
+    .cancelled .value { color: var(--danger); }
+
+    .skel-head {
+      width: 12rem;
+      height: 2.4rem;
+      margin-bottom: 1.25rem;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--primary-muted) 25%, var(--primary-soft) 50%, var(--primary-muted) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+
+    .skel-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+
+    .skel-cell {
+      height: 4.5rem;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--primary-muted) 25%, var(--primary-soft) 50%, var(--primary-muted) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.2s ease-in-out infinite;
     }
@@ -180,17 +151,42 @@ import { BookingApiService } from '../../core/services/booking-api.service';
       100% { background-position: -100% 0; }
     }
 
-    @media (max-width: 1200px) {
-      .stats-strip,
-      .stats-loading {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    @media (max-width: 720px) {
+      .row {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.9rem 0;
+      }
+
+      .stat {
+        border-left: none;
+        padding: 0.75rem 0.5rem 0.15rem 0;
+        border-top: 1px solid var(--border-light);
+      }
+
+      .stat.revenue {
+        grid-column: 1 / -1;
+        border-top: none;
+        padding-top: 0;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--border-light);
+        margin-bottom: 0.15rem;
+      }
+
+      .stat:nth-child(2),
+      .stat:nth-child(3) {
+        border-top: none;
+        padding-top: 0.15rem;
+      }
+
+      .revenue .value,
+      .value {
+        font-size: 1.45rem;
       }
     }
 
     @media (max-width: 640px) {
-      .stats-strip,
-      .stats-loading {
-        grid-template-columns: 1fr;
+      .panel {
+        padding: 1.15rem 1rem 1rem;
       }
     }
   `,
@@ -205,6 +201,7 @@ export class DashboardStatsComponent implements OnInit {
 
     return {
       totalBookings: statistics?.totalBookings ?? 0,
+      pendingBookings: statistics?.pendingBookings ?? 0,
       completedBookings: statistics?.completedBookings ?? 0,
       cancelledBookings: statistics?.cancelledBookings ?? 0,
       totalRevenue: statistics?.totalRevenue ?? 0,
