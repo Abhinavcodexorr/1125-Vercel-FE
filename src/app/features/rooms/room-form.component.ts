@@ -29,7 +29,14 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       <app-page-header
         [title]="isEdit ? 'Update room' : 'Add room'"
         [showDivider]="false"
-      />
+      >
+        <a routerLink="/rooms" class="btn btn-ghost back-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Back
+        </a>
+      </app-page-header>
 
       @if (error()) {
         <div class="alert alert-error">{{ error() }}</div>
@@ -282,6 +289,17 @@ import { ShimmerListComponent } from '../../shared/components/shimmer-list/shimm
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .back-link svg {
+      width: 1.05rem;
+      height: 1.05rem;
     }
 
     .form-shell {
